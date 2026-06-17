@@ -70,7 +70,7 @@
     .actions{display:flex;gap:10px;flex-wrap:wrap;justify-content:flex-end}
     .view{animation:fade .18s ease}
     @keyframes fade{from{opacity:.2;transform:translateY(6px)}to{opacity:1;transform:none}}
-    .cards{display:grid;grid-template-columns:repeat(6,minmax(150px,1fr));gap:14px;margin-bottom:20px}
+    .cards{display:grid;grid-template-columns:repeat(7,minmax(140px,1fr));gap:14px;margin-bottom:20px}
     .stat{background:#fff;border-radius:20px;padding:17px;box-shadow:0 10px 26px rgba(14,33,58,.07);border:1px solid rgba(217,226,238,.7);position:relative;overflow:hidden}
     .stat:after{content:"";position:absolute;right:-22px;top:-22px;width:78px;height:78px;border-radius:50%;background:rgba(15,139,141,.12)}
     .stat.danger:after{background:rgba(214,69,69,.13)}
@@ -156,6 +156,7 @@ const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBh
       <button data-view="processos">📁 Central de Processos</button>
       <button data-view="tarefas">✅ Tarefas do Processo</button>
       <button data-view="kanban">🧭 Quadro Visual</button>
+      <button data-view="arquivo">📦 Arquivo Final</button>
       <button data-view="modelos">🧩 Modelos Prontos</button>
     </nav>
     <button id="logoutBtn" class="btn ghost full">Sair</button>
@@ -187,6 +188,7 @@ const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBh
         <article class="stat purple"><span>Aguardando André</span><strong id="statAndre">0</strong></article>
         <article class="stat"><span>MP / Controle</span><strong id="statMp">0</strong></article>
         <article class="stat"><span>Captação</span><strong id="statCaptacao">0</strong></article>
+        <article class="stat"><span>Finalizados</span><strong id="statFinished">0</strong></article>
       </div>
       <div class="grid2">
         <section class="panel">
@@ -235,6 +237,7 @@ const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBh
           </div>
           <div class="dialog-actions" style="justify-content:flex-start;margin-top:18px">
             <button id="editBtn" class="btn gold" type="button">Editar processo</button>
+            <button id="finishBtn" class="btn primary" type="button">Finalizar / Arquivar</button>
             <a id="driveBtn" class="btn ghost" target="_blank" rel="noreferrer">Abrir Drive</a>
           </div>
         </section>
@@ -259,6 +262,30 @@ const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBh
 
     <section id="kanbanView" class="view hidden">
       <div class="kanban" id="kanban"></div>
+    </section>
+
+    <section id="arquivoView" class="view hidden">
+      <div class="cards">
+        <article class="stat"><span>Arquivo final</span><strong id="archTotal">0</strong></article>
+        <article class="stat"><span>Concluídos</span><strong id="archDone">0</strong></article>
+        <article class="stat"><span>Arquivados</span><strong id="archArchived">0</strong></article>
+        <article class="stat gold"><span>Protocolados</span><strong id="archProtocol">0</strong></article>
+        <article class="stat danger"><span>Sem link final</span><strong id="archNoLink">0</strong></article>
+        <article class="stat"><span>Este mês</span><strong id="archMonth">0</strong></article>
+        <article class="stat"><span>Com conclusão</span><strong id="archConclusion">0</strong></article>
+      </div>
+      <div class="toolbar">
+        <input id="archiveSearch" type="search" placeholder="Pesquisar no arquivo final por assunto, conclusão, protocolo, local...">
+        <select id="archiveTipo"><option value="">Todos os tipos</option></select>
+        <select id="archiveStatus"><option value="">Todos os finais</option><option>Concluído</option><option>Arquivado</option><option>Enviado/Protocolado</option></select>
+        <button id="clearArchiveFilters" class="btn ghost">Limpar arquivo</button>
+      </div>
+      <div class="table-wrap">
+        <table>
+          <thead><tr><th>Nº</th><th>Tipo</th><th>Assunto</th><th>Finalização</th><th>Conclusão</th><th>Local / Protocolo</th><th></th></tr></thead>
+          <tbody id="archiveBody"></tbody>
+        </table>
+      </div>
     </section>
 
     <section id="modelosView" class="view hidden">
@@ -301,6 +328,30 @@ const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBh
   </form>
 </dialog>
 
+<dialog id="finishDialog">
+  <form id="finishForm" class="dialog-card">
+    <div class="dialog-head">
+      <h3>Finalizar e arquivar processo</h3>
+      <button type="button" class="x" id="closeFinishDialog">×</button>
+    </div>
+    <input type="hidden" id="finishProcessId">
+    <div class="form-grid">
+      <label class="field"><span>Status final</span><select id="finishStatus" required><option>Concluído</option><option>Arquivado</option><option>Enviado/Protocolado</option></select></label>
+      <label class="field"><span>Data da finalização</span><input id="finishDate" type="date" required></label>
+      <label class="field"><span>Nº do protocolo / resposta</span><input id="finishProtocol" placeholder="Ex: Protocolo, Ofício respondido, SEI..."></label>
+      <label class="field wide"><span>Conclusão do processo</span><textarea id="finishConclusion" required placeholder="Ex: Processo finalizado com resposta protocolada ao MP; documentos arquivados na pasta..." ></textarea></label>
+      <label class="field wide"><span>Local de arquivamento</span><input id="finishLocation" placeholder="Ex: Drive > MP e Órgãos de Controle > 2026 > Transporte Escolar"></label>
+      <label class="field wide"><span>Link do arquivo final / pasta final</span><input id="finishLink" type="url" placeholder="https://drive.google.com/..."></label>
+      <label class="field wide"><span>Observação final</span><textarea id="finishObs" placeholder="Detalhes finais, pendências futuras ou histórico de encerramento"></textarea></label>
+    </div>
+    <div class="dialog-actions">
+      <button class="btn ghost" type="button" id="cancelFinishDialog">Cancelar</button>
+      <button class="btn primary" type="submit">Finalizar e enviar para Arquivo Final</button>
+    </div>
+    <p id="finishMsg" class="message"></p>
+  </form>
+</dialog>
+
 <script>
 const configured = SUPABASE_URL.startsWith('http') && SUPABASE_ANON_KEY.length > 40;
 const client = configured ? supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY) : null;
@@ -315,7 +366,7 @@ const TYPES = [
 ];
 const STATUS = ['Novo','Classificado','Em elaboração','Aguardando informações','Aguardando revisão do André','Aguardando assinatura','Enviado/Protocolado','Concluído','Arquivado','Suspenso'];
 const PRIOR = ['Urgente','Alta','Média','Baixa'];
-const FINAL = ['Concluído','Arquivado','Enviado/Protocolado'];
+const FINAL = ['Concluído','Arquivado'];
 const DEFAULT_TEMPLATES = [
   ['CAPTACAO_RECURSOS','Identificar fonte do recurso: SIMEC, PAR, FNDE, emenda, convênio ou programa.',1],
   ['CAPTACAO_RECURSOS','Levantar diagnóstico da necessidade: escola, quantidade, público atendido e justificativa.',2],
@@ -365,7 +416,8 @@ const DEMO = [
   {id:'demo1',numero_interno:'DPC-001/2026',data_entrada:'2026-06-17',tipo:'MP_ORGAOS_CONTROLE',origem:'Ministério Público',assunto:'Resposta técnica sobre transporte escolar rural',descricao:'Organizar relatório com rotas, alunos atendidos, veículos e providências adotadas.',prioridade:'Urgente',prazo_oficial:'2026-06-20',prazo_interno:'2026-06-19',responsavel:'André',setor_envolvido:'Transporte Escolar',status:'Aguardando revisão do André',link_drive:''},
   {id:'demo2',numero_interno:'DPC-002/2026',data_entrada:'2026-06-17',tipo:'CAPTACAO_RECURSOS',origem:'SIMEC / PAR',assunto:'Pedido de ônibus escolar',descricao:'Preparar justificativa técnica e documentação para solicitação de veículos escolares.',prioridade:'Alta',prazo_oficial:'2026-06-25',prazo_interno:'2026-06-21',responsavel:'Andressa',setor_envolvido:'Planejamento',status:'Em elaboração',link_drive:''},
   {id:'demo3',numero_interno:'DPC-003/2026',data_entrada:'2026-06-16',tipo:'CONSELHOS',origem:'CAE',assunto:'Parecer sobre alimentação escolar',descricao:'Organizar documentos do CAE e minuta de parecer.',prioridade:'Média',prazo_oficial:'2026-06-24',prazo_interno:'2026-06-22',responsavel:'Andressa',setor_envolvido:'Conselhos',status:'Aguardando informações',link_drive:''},
-  {id:'demo4',numero_interno:'DPC-004/2026',data_entrada:'2026-06-15',tipo:'PARECER_RELATORIO',origem:'SEMEC',assunto:'Relatório de execução de metas do PME',descricao:'Consolidar dados e elaborar relatório técnico para acompanhamento interno.',prioridade:'Alta',prazo_oficial:'2026-06-30',prazo_interno:'2026-06-26',responsavel:'André',setor_envolvido:'Planejamento',status:'Novo',link_drive:''}
+  {id:'demo4',numero_interno:'DPC-004/2026',data_entrada:'2026-06-15',tipo:'PARECER_RELATORIO',origem:'SEMEC',assunto:'Relatório de execução de metas do PME',descricao:'Consolidar dados e elaborar relatório técnico para acompanhamento interno.',prioridade:'Alta',prazo_oficial:'2026-06-30',prazo_interno:'2026-06-26',responsavel:'André',setor_envolvido:'Planejamento',status:'Novo',link_drive:''},
+  {id:'demo5',numero_interno:'DPC-005/2026',data_entrada:'2026-06-10',tipo:'DOCUMENTO_TECNICO',origem:'SEMEC',assunto:'Declaração de endereço para cadastro INEP',descricao:'Processo finalizado com emissão de declaração e arquivamento da versão final.',prioridade:'Média',prazo_oficial:'2026-06-13',prazo_interno:'2026-06-12',responsavel:'Andressa',setor_envolvido:'INEP',status:'Arquivado',link_drive:'',data_finalizacao:'2026-06-12',conclusao:'Declaração emitida, revisada e arquivada para fins de cadastro no INEP.',local_arquivo:'Drive > 07 - Modelos e Documentos > INEP > 2026',link_arquivo_final:'',protocolo:'Arquivo interno',observacoes_finalizacao:'Exemplo de processo encerrado no arquivo final.'}
 ];
 let state = {session:null,processos:[],tasks:[],notes:[],selected:null,templates:[]};
 const $ = id => document.getElementById(id);
@@ -399,6 +451,7 @@ function fillSelects(){
   TYPES.forEach(([v,l,e])=>{
     $('tipo').insertAdjacentHTML('beforeend',`<option value="${v}">${e} ${l}</option>`);
     $('filterTipo').insertAdjacentHTML('beforeend',`<option value="${v}">${e} ${l}</option>`);
+    $('archiveTipo').insertAdjacentHTML('beforeend',`<option value="${v}">${e} ${l}</option>`);
   });
   PRIOR.forEach(v=>$('prioridade').insertAdjacentHTML('beforeend',`<option>${v}</option>`));
   STATUS.forEach(v=>{
@@ -418,9 +471,17 @@ function bind(){
   $('filterTipo').addEventListener('change',renderTable);
   $('filterStatus').addEventListener('change',renderTable);
   $('clearFilters').addEventListener('click',()=>{$('search').value='';$('filterTipo').value='';$('filterStatus').value='';renderTable();});
+  $('archiveSearch').addEventListener('input',renderArchive);
+  $('archiveTipo').addEventListener('change',renderArchive);
+  $('archiveStatus').addEventListener('change',renderArchive);
+  $('clearArchiveFilters').addEventListener('click',()=>{$('archiveSearch').value='';$('archiveTipo').value='';$('archiveStatus').value='';renderArchive();});
   $('refreshBtn').addEventListener('click',loadAll);
   $('exportBtn').addEventListener('click',exportCSV);
   $('editBtn').addEventListener('click',()=>openDialog(state.selected));
+  $('finishBtn').addEventListener('click',()=>openFinishDialog(state.selected));
+  $('closeFinishDialog').addEventListener('click',()=>$('finishDialog').close());
+  $('cancelFinishDialog').addEventListener('click',()=>$('finishDialog').close());
+  $('finishForm').addEventListener('submit',finishProcess);
   $('noteForm').addEventListener('submit',addNote);
 }
 async function init(){
@@ -453,18 +514,19 @@ async function loadAll(){
   state.processos=p.data||[]; state.tasks=t.data||[]; state.notes=n.data||[]; state.templates=(templ.data&&templ.data.length)?templ.data:DEFAULT_TEMPLATES.map(([process_type,title,sort_order])=>({id:uid(),process_type,title,sort_order,required:true}));
   renderAll();
 }
-function renderAll(){renderDashboard();renderTable();renderKanban();renderTemplates();if(state.selected) selectProcess(state.selected.id,false);}
+function renderAll(){renderDashboard();renderTable();renderKanban();renderArchive();renderTemplates();if(state.selected) selectProcess(state.selected.id,false);}
 function switchView(v){
   document.querySelectorAll('.nav button').forEach(b=>b.classList.toggle('active',b.dataset.view===v));
   document.querySelectorAll('.view').forEach(x=>x.classList.add('hidden'));
   $(v+'View').classList.remove('hidden');
-  const map={dashboard:['Dashboard','Visão geral dos processos, prazos críticos e pendências do departamento.'],processos:['Central de Processos','Controle de tudo que chega ao departamento, com responsável, prazo, status e checklist.'],tarefas:['Tarefas do Processo','Checklist automático, histórico e andamento do processo selecionado.'],kanban:['Quadro Visual','Visão por etapas para acompanhar gargalos e prioridades.'],modelos:['Modelos Prontos','Fluxos automáticos por tipo de processo.']};
+  const map={dashboard:['Dashboard','Visão geral dos processos, prazos críticos e pendências do departamento.'],processos:['Central de Processos','Controle de tudo que chega ao departamento, com responsável, prazo, status e checklist.'],tarefas:['Tarefas do Processo','Checklist automático, histórico e andamento do processo selecionado.'],kanban:['Quadro Visual','Visão por etapas para acompanhar gargalos e prioridades.'],arquivo:['Arquivo Final','Processos encerrados, conclusão registrada, protocolo e local de arquivamento.'],modelos:['Modelos Prontos','Fluxos automáticos por tipo de processo.']};
   $('pageTitle').textContent=map[v][0]; $('pageSubtitle').textContent=map[v][1];
 }
-function isOpen(p){return !FINAL.includes(p.status)}
+function isFinalized(p){return FINAL.includes(p.status) || !!p.data_finalizacao}
+function isOpen(p){return !isFinalized(p)}
 function due(p){return p.prazo_interno || p.prazo_oficial || ''}
 function daysTo(d){ if(!d) return 9999; return Math.ceil((new Date(d+'T00:00:00') - new Date(today()+'T00:00:00'))/86400000);}
-function statusBadge(s){let c=s==='Concluído'||s==='Enviado/Protocolado'?'green':s.includes('Aguardando')?'gold':s==='Suspenso'?'red':s==='Em elaboração'?'blue':'purple'; return `<span class="badge ${c}">${escapeHtml(s)}</span>`;}
+function statusBadge(s){let c=s==='Concluído'||s==='Arquivado'||s==='Enviado/Protocolado'?'green':s.includes('Aguardando')?'gold':s==='Suspenso'?'red':s==='Em elaboração'?'blue':'purple'; return `<span class="badge ${c}">${escapeHtml(s)}</span>`;}
 function priorityBadge(p){let c=p==='Urgente'?'red':p==='Alta'?'orange':p==='Média'?'blue':'green'; return `<span class="badge ${c}">${escapeHtml(p)}</span>`;}
 function taskProgress(pid){const ts=state.tasks.filter(t=>t.process_id===pid); const done=ts.filter(t=>t.done).length; return {total:ts.length,done,pct:ts.length?Math.round(done/ts.length*100):0};}
 function renderDashboard(){
@@ -475,6 +537,7 @@ function renderDashboard(){
   $('statAndre').textContent=open.filter(p=>p.status==='Aguardando revisão do André'||norm(p.responsavel).includes('andre')).length;
   $('statMp').textContent=open.filter(p=>p.tipo==='MP_ORGAOS_CONTROLE').length;
   $('statCaptacao').textContent=open.filter(p=>p.tipo==='CAPTACAO_RECURSOS').length;
+  $('statFinished').textContent=state.processos.filter(isFinalized).length;
   const critical=open.filter(p=>due(p)).sort((a,b)=>daysTo(due(a))-daysTo(due(b))).slice(0,7);
   $('criticalList').innerHTML = critical.length?critical.map(itemHtml).join(''):'<div class="empty"><strong>Sem prazos críticos</strong>Nenhuma pendência com prazo próximo cadastrada.</div>';
   const max=Math.max(1,...TYPES.map(([v])=>state.processos.filter(p=>p.tipo===v).length));
@@ -491,9 +554,26 @@ function renderTable(){
   $('tableBody').innerHTML=rows.length?rows.map(p=>{const prog=taskProgress(p.id);return `<tr><td><strong>${escapeHtml(p.numero_interno||'-')}</strong></td><td>${icon(p.tipo)} ${typeLabel(p.tipo)}</td><td class="subject"><strong>${escapeHtml(p.assunto)}</strong><small>${escapeHtml(p.origem||'')} ${p.setor_envolvido?'• '+escapeHtml(p.setor_envolvido):''}</small></td><td>${escapeHtml(p.responsavel||'-')}</td><td>${fmt(due(p))}</td><td>${statusBadge(p.status)}</td><td><div class="progress"><div class="line"><i style="width:${prog.pct}%"></i></div><small>${prog.done}/${prog.total} tarefas</small></div></td><td><button class="btn ghost" onclick="selectProcess('${p.id}')">Abrir</button></td></tr>`}).join(''):'<tr><td colspan="8" class="muted">Nenhum processo encontrado.</td></tr>';
 }
 function renderKanban(){
-  const cols=['Novo','Em elaboração','Aguardando informações','Aguardando revisão do André','Aguardando assinatura','Enviado/Protocolado','Concluído'];
+  const cols=['Novo','Em elaboração','Aguardando informações','Aguardando revisão do André','Aguardando assinatura','Enviado/Protocolado','Concluído','Arquivado'];
   $('kanban').innerHTML=cols.map(c=>{const arr=state.processos.filter(p=>p.status===c);return `<section class="col"><h3>${c}<span class="badge">${arr.length}</span></h3>${arr.map(p=>`<div class="card-mini"><strong>${icon(p.tipo)} ${escapeHtml(p.assunto)}</strong><small>${escapeHtml(p.numero_interno||'-')} • ${escapeHtml(p.responsavel||'sem responsável')}<br>Prazo: ${fmt(due(p))}</small><div class="row">${priorityBadge(p.prioridade||'Média')}<button class="btn ghost" onclick="selectProcess('${p.id}')">Abrir</button></div></div>`).join('')||'<span class="muted small">Sem processos.</span>'}</section>`}).join('');
 }
+
+function filteredArchive(){
+  const q=norm($('archiveSearch')?.value||''); const tipo=$('archiveTipo')?.value||''; const st=$('archiveStatus')?.value||'';
+  return state.processos.filter(p=>isFinalized(p)&&(!tipo||p.tipo===tipo)&&(!st||p.status===st)&&(!q||norm([p.numero_interno,p.assunto,p.origem,p.responsavel,p.setor_envolvido,p.descricao,p.conclusao,p.local_arquivo,p.protocolo,p.observacoes_finalizacao].join(' ')).includes(q)));
+}
+function renderArchive(){
+  const all=state.processos.filter(isFinalized); const rows=filteredArchive(); const month=today().slice(0,7);
+  $('archTotal').textContent=all.length;
+  $('archDone').textContent=all.filter(p=>p.status==='Concluído').length;
+  $('archArchived').textContent=all.filter(p=>p.status==='Arquivado').length;
+  $('archProtocol').textContent=all.filter(p=>p.status==='Enviado/Protocolado'||p.protocolo).length;
+  $('archNoLink').textContent=all.filter(p=>!(p.link_arquivo_final||p.link_drive)).length;
+  $('archMonth').textContent=all.filter(p=>(p.data_finalizacao||'').slice(0,7)===month).length;
+  $('archConclusion').textContent=all.filter(p=>p.conclusao).length;
+  $('archiveBody').innerHTML=rows.length?rows.map(p=>`<tr><td><strong>${escapeHtml(p.numero_interno||'-')}</strong></td><td>${icon(p.tipo)} ${typeLabel(p.tipo)}</td><td class="subject"><strong>${escapeHtml(p.assunto)}</strong><small>${escapeHtml(p.origem||'')} ${p.responsavel?'• '+escapeHtml(p.responsavel):''}</small></td><td>${statusBadge(p.status||'-')}<br><span class="small muted">${fmt(p.data_finalizacao)}</span></td><td class="subject"><small>${escapeHtml(p.conclusao||'Sem conclusão registrada.')}</small></td><td class="subject"><strong>${escapeHtml(p.local_arquivo||'Sem local informado')}</strong><small>${escapeHtml(p.protocolo||'Sem protocolo')}</small></td><td><button class="btn ghost" onclick="selectProcess('${p.id}')">Abrir</button></td></tr>`).join(''):'<tr><td colspan="7" class="muted">Nenhum processo finalizado encontrado.</td></tr>';
+}
+
 function renderTemplates(){
   const grouped = TYPES.map(([v,l,e])=>({v,l,e,items:state.templates.filter(t=>t.process_type===v).sort((a,b)=>a.sort_order-b.sort_order)}));
   $('templatesBox').innerHTML=grouped.map(g=>`<section class="template"><h3>${g.e} ${g.l}<span class="badge">${g.items.length}</span></h3><ol>${g.items.map(i=>`<li>${escapeHtml(i.title)}</li>`).join('')}</ol></section>`).join('');
@@ -518,6 +598,42 @@ async function saveProcess(e){
   else{const p={id:uid(),...obj,created_at:new Date().toISOString()}; state.processos.unshift(p); createLocalTasks(p);}
   saveLocal(); $('dialog').close(); renderAll();
 }
+
+function openFinishDialog(p){
+  if(!p) return;
+  $('finishForm').reset(); $('finishMsg').textContent=''; $('finishProcessId').value=p.id;
+  $('finishStatus').value=p.status==='Arquivado'||p.status==='Enviado/Protocolado'||p.status==='Concluído'?p.status:'Concluído';
+  $('finishDate').value=p.data_finalizacao||today();
+  $('finishProtocol').value=p.protocolo||'';
+  $('finishConclusion').value=p.conclusao||'';
+  $('finishLocation').value=p.local_arquivo||'';
+  $('finishLink').value=p.link_arquivo_final||p.link_drive||'';
+  $('finishObs').value=p.observacoes_finalizacao||'';
+  $('finishDialog').showModal();
+}
+async function finishProcess(e){
+  e.preventDefault(); const id=$('finishProcessId').value; if(!id)return;
+  const obj={
+    status:$('finishStatus').value,
+    data_finalizacao:$('finishDate').value||today(),
+    conclusao:$('finishConclusion').value.trim(),
+    local_arquivo:$('finishLocation').value.trim(),
+    link_arquivo_final:$('finishLink').value.trim(),
+    protocolo:$('finishProtocol').value.trim(),
+    observacoes_finalizacao:$('finishObs').value.trim()
+  };
+  $('finishMsg').textContent='Finalizando...';
+  const nota=`Processo finalizado como ${obj.status}. Conclusão: ${obj.conclusao || 'sem descrição'}. Local de arquivo: ${obj.local_arquivo || 'não informado'}. Protocolo: ${obj.protocolo || 'não informado'}.`;
+  if(configured){
+    const {error}=await client.from('processes').update(obj).eq('id',id); if(error){$('finishMsg').textContent=error.message;return;}
+    await client.from('process_notes').insert({process_id:id,note:nota});
+    $('finishDialog').close(); await loadAll(); return;
+  }
+  const ix=state.processos.findIndex(p=>p.id===id); if(ix>=0) state.processos[ix]={...state.processos[ix],...obj};
+  state.notes.unshift({id:uid(),process_id:id,note:nota,created_at:new Date().toISOString()});
+  saveLocal(); $('finishDialog').close(); renderAll(); selectProcess(id,false);
+}
+
 async function createDbTasks(p){
   let templates=state.templates.filter(t=>t.process_type===p.tipo).sort((a,b)=>a.sort_order-b.sort_order);
   if(!templates.length) templates=DEFAULT_TEMPLATES.filter(t=>t[0]===p.tipo).map(([process_type,title,sort_order])=>({process_type,title,sort_order,required:true}));
@@ -528,7 +644,7 @@ window.selectProcess = async function(id,go=true){
   state.selected=state.processos.find(p=>p.id===id); if(!state.selected)return;
   if(go) switchView('tarefas');
   $('emptyDetail').classList.add('hidden'); $('detailArea').classList.remove('hidden');
-  const p=state.selected; $('detailTipo').textContent=`${icon(p.tipo)} ${typeLabel(p.tipo)}`; $('detailTitle').textContent=`${p.numero_interno||'Sem número'} • ${p.assunto}`; $('detailDesc').textContent=p.descricao||'Sem descrição registrada.'; $('detailStatus').textContent=p.status||'-'; $('detailResp').textContent=p.responsavel||'-'; $('detailPrazo').textContent=fmt(due(p)); $('detailOrigem').textContent=p.origem||'-'; $('driveBtn').href=p.link_drive||'#'; $('driveBtn').classList.toggle('hidden',!p.link_drive);
+  const p=state.selected; $('detailTipo').textContent=`${icon(p.tipo)} ${typeLabel(p.tipo)}`; $('detailTitle').textContent=`${p.numero_interno||'Sem número'} • ${p.assunto}`; $('detailDesc').textContent=p.descricao||'Sem descrição registrada.'; $('detailStatus').textContent=p.status||'-'; $('detailResp').textContent=p.responsavel||'-'; $('detailPrazo').textContent=fmt(due(p)); $('detailOrigem').textContent=p.origem||'-'; $('driveBtn').href=p.link_drive||p.link_arquivo_final||'#'; $('driveBtn').classList.toggle('hidden',!(p.link_drive||p.link_arquivo_final)); $('finishBtn').textContent=isFinalized(p)?'Editar finalização':'Finalizar / Arquivar';
   renderTasks(); renderNotes(); renderDetailSummary();
 }
 function renderTasks(){
@@ -551,10 +667,11 @@ function renderNotes(){
 }
 function renderDetailSummary(){
   const prog=taskProgress(state.selected.id); const d=daysTo(due(state.selected)); const prazo=d<0?`${Math.abs(d)} dia(s) atrasado`:d===0?'vence hoje':d<9999?`vence em ${d} dia(s)`:'sem prazo';
-  $('detailSummary').innerHTML=`<div class="item"><div class="item-main"><strong>Andamento do checklist</strong><small>${prog.done} de ${prog.total} tarefas concluídas (${prog.pct}%)</small></div><span class="badge green">${prog.pct}%</span></div><div class="item"><div class="item-main"><strong>Situação do prazo</strong><small>${prazo}</small></div>${priorityBadge(state.selected.prioridade||'Média')}</div><div class="item"><div class="item-main"><strong>Setor envolvido</strong><small>${escapeHtml(state.selected.setor_envolvido||'não informado')}</small></div></div>`;
+  const finalInfo=isFinalized(state.selected)?`<div class="item"><div class="item-main"><strong>Conclusão / Arquivo final</strong><small>${escapeHtml(state.selected.conclusao||'Processo finalizado sem conclusão detalhada.')}<br>Local: ${escapeHtml(state.selected.local_arquivo||'não informado')} ${state.selected.protocolo?'• Protocolo: '+escapeHtml(state.selected.protocolo):''}</small></div><span class="badge green">${fmt(state.selected.data_finalizacao)}</span></div>`:'';
+  $('detailSummary').innerHTML=`<div class="item"><div class="item-main"><strong>Andamento do checklist</strong><small>${prog.done} de ${prog.total} tarefas concluídas (${prog.pct}%)</small></div><span class="badge green">${prog.pct}%</span></div><div class="item"><div class="item-main"><strong>Situação do prazo</strong><small>${prazo}</small></div>${priorityBadge(state.selected.prioridade||'Média')}</div><div class="item"><div class="item-main"><strong>Setor envolvido</strong><small>${escapeHtml(state.selected.setor_envolvido||'não informado')}</small></div></div>${finalInfo}`;
 }
 function exportCSV(){
-  const headers=['numero_interno','data_entrada','tipo','origem','assunto','prioridade','prazo_oficial','prazo_interno','responsavel','setor_envolvido','status','link_drive'];
+  const headers=['numero_interno','data_entrada','tipo','origem','assunto','prioridade','prazo_oficial','prazo_interno','responsavel','setor_envolvido','status','data_finalizacao','conclusao','local_arquivo','protocolo','link_arquivo_final','link_drive'];
   const csv=[headers.join(';'),...state.processos.map(p=>headers.map(h=>`"${(p[h]||'').toString().replaceAll('"','""')}"`).join(';'))].join('\n');
   const blob=new Blob([csv],{type:'text/csv;charset=utf-8;'}); const a=document.createElement('a'); a.href=URL.createObjectURL(blob); a.download='processos_planeja_semec.csv'; a.click(); URL.revokeObjectURL(a.href);
 }
