@@ -1,0 +1,77 @@
+PLANEJA SEMEC - VERSÃO GITHUB SEM PASTAS
+
+Este pacote foi reorganizado para resolver o problema de upload no GitHub.
+Todos os arquivos estão na raiz, sem subpastas.
+
+ARQUIVOS:
+
+1. index.html
+   Sistema completo em um único arquivo.
+   Já contém HTML, CSS e JavaScript juntos.
+   É este arquivo que você sobe no GitHub para abrir o sistema.
+
+2. SUPABASE_SQL_COMPLETO.sql
+   Banco de dados completo do Supabase.
+   Cria tabelas, políticas de acesso, realtime e tarefas padrão.
+
+3. TAREFAS_PADRAO.csv
+   Lista das tarefas prontas por tipo de processo.
+   Serve para conferência ou edição futura.
+
+COMO SUBIR NO GITHUB:
+
+1. Abra seu repositório no GitHub.
+2. Clique em Add file > Upload files.
+3. Arraste o arquivo index.html para dentro do repositório.
+4. Clique em Commit changes.
+5. Vá em Settings > Pages.
+6. Em Branch, selecione main e /root.
+7. Salve.
+8. O sistema abrirá pelo link do GitHub Pages.
+
+COMO CONFIGURAR O SUPABASE:
+
+1. Crie um projeto no Supabase.
+2. Vá em SQL Editor > New query.
+3. Cole o conteúdo do arquivo SUPABASE_SQL_COMPLETO.sql.
+4. Clique em Run.
+5. Vá em Authentication > Users.
+6. Crie os usuários, por exemplo André e Andressa.
+7. Vá em Project Settings > API.
+8. Copie a Project URL e a anon public key.
+9. Abra o index.html no Bloco de Notas ou VS Code.
+10. No começo do arquivo, procure:
+
+const SUPABASE_URL = "COLE_AQUI_A_URL_DO_SUPABASE";
+const SUPABASE_ANON_KEY = "COLE_AQUI_A_ANON_KEY_DO_SUPABASE";
+
+11. Cole seus dados do Supabase.
+12. Salve o index.html.
+13. Suba novamente para o GitHub.
+
+IMPORTANTE:
+
+Enquanto você não configurar o Supabase, o sistema abre em modo visual de demonstração.
+Depois que configurar, ele ativa login real, banco real e uso por mais de um computador.
+
+MÓDULOS DO SISTEMA:
+
+- Dashboard visual
+- Central de Processos
+- Tarefas do Processo
+- Quadro Visual por status
+- Modelos de tarefas prontas
+- Exportação CSV
+- Controle de prazos
+- Observações e histórico
+- Link para pasta/documento no Drive
+
+TIPOS DE PROCESSO:
+
+- Captação de Recursos
+- MP / Órgãos de Controle
+- Conselhos
+- Pareceres e Relatórios
+- Sistemas Oficiais
+- Planejamento
+- Documento Técnico

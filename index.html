@@ -1,0 +1,564 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Planeja SEMEC | Departamento de Planejamento e Captação</title>
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <style>
+    :root{
+      --bg:#07111f;
+      --bg2:#0d1b2f;
+      --card:#ffffff;
+      --soft:#f4f7fb;
+      --line:#dfe7f2;
+      --ink:#142235;
+      --muted:#64748b;
+      --brand:#116466;
+      --brand2:#0f8b8d;
+      --gold:#f4b942;
+      --red:#d64545;
+      --green:#268b61;
+      --blue:#2364aa;
+      --purple:#6d4cc2;
+      --orange:#ee7b2a;
+      --shadow:0 22px 70px rgba(9,22,43,.20);
+      --radius:22px;
+    }
+    *{box-sizing:border-box}
+    body{margin:0;font-family:Inter,Segoe UI,Roboto,Arial,sans-serif;background:radial-gradient(circle at top left,#164e63 0,#07111f 42%,#040912 100%);color:var(--ink);min-height:100vh}
+    button,input,select,textarea{font:inherit}
+    button{cursor:pointer}
+    .hidden{display:none!important}
+    .auth{min-height:100vh;display:grid;place-items:center;padding:24px;position:relative;overflow:hidden}
+    .auth:before{content:"";position:absolute;inset:-20%;background:radial-gradient(circle at 30% 30%,rgba(244,185,66,.25),transparent 28%),radial-gradient(circle at 75% 65%,rgba(15,139,141,.28),transparent 30%);filter:blur(12px)}
+    .auth-card{position:relative;width:min(470px,100%);background:rgba(255,255,255,.96);border:1px solid rgba(255,255,255,.6);border-radius:30px;box-shadow:var(--shadow);padding:34px}
+    .mark{width:62px;height:62px;border-radius:20px;background:linear-gradient(135deg,var(--brand),var(--gold));display:grid;place-items:center;color:#fff;font-weight:900;letter-spacing:.5px;box-shadow:0 16px 35px rgba(17,100,102,.28)}
+    .auth-card h1{margin:18px 0 4px;font-size:34px;line-height:1}
+    .auth-card p{color:var(--muted);margin:0 0 24px;line-height:1.45}
+    .field{display:flex;flex-direction:column;gap:7px;font-weight:700;font-size:13px;color:#304056;margin-bottom:14px}
+    .field span{display:flex;align-items:center;gap:8px}
+    input,select,textarea{width:100%;border:1px solid var(--line);border-radius:15px;padding:12px 13px;background:#fff;color:var(--ink);outline:none;transition:.18s ease}
+    textarea{resize:vertical;min-height:95px}
+    input:focus,select:focus,textarea:focus{border-color:var(--brand2);box-shadow:0 0 0 4px rgba(15,139,141,.12)}
+    .btn{border:0;border-radius:15px;padding:12px 16px;font-weight:800;display:inline-flex;align-items:center;justify-content:center;gap:8px;transition:.18s ease;text-decoration:none;white-space:nowrap}
+    .btn:hover{transform:translateY(-1px)}
+    .btn.primary{background:linear-gradient(135deg,var(--brand),var(--brand2));color:#fff;box-shadow:0 14px 28px rgba(15,139,141,.24)}
+    .btn.gold{background:linear-gradient(135deg,#e8971e,var(--gold));color:#1a1a1a}
+    .btn.ghost{background:#eef5f7;color:#24445a}
+    .btn.danger{background:#fff1f1;color:#b42318}
+    .btn.full{width:100%}
+    .message{font-size:13px;font-weight:700;color:var(--brand);min-height:18px;margin:12px 0 0}
+    .demo-note{background:#f8fbff;border:1px dashed #b6c7da;color:#4a5e74;border-radius:18px;padding:12px 14px;margin-top:15px;font-size:13px;line-height:1.45}
+
+    .app{min-height:100vh;display:grid;grid-template-columns:292px 1fr;background:#eef3f8}
+    .sidebar{background:linear-gradient(180deg,#07111f,#0a1a2f);color:#fff;padding:23px;display:flex;flex-direction:column;gap:22px;position:sticky;top:0;min-height:100vh}
+    .brand{display:flex;align-items:center;gap:13px;padding-bottom:18px;border-bottom:1px solid rgba(255,255,255,.1)}
+    .mark.sm{width:48px;height:48px;border-radius:16px;font-size:15px}
+    .brand strong{display:block;font-size:17px}
+    .brand small{display:block;color:#a9bed5;font-size:12px;margin-top:3px;line-height:1.25}
+    .nav{display:flex;flex-direction:column;gap:8px}
+    .nav button{border:0;background:transparent;color:#dbe7f2;text-align:left;border-radius:15px;padding:13px 14px;font-weight:800;display:flex;align-items:center;gap:10px;transition:.16s ease}
+    .nav button:hover,.nav button.active{background:rgba(255,255,255,.10);color:#fff}
+    .nav button.active{box-shadow:inset 4px 0 0 var(--gold)}
+    .sidebar-footer{margin-top:auto;color:#9bb1c8;font-size:12px;line-height:1.45}
+    .content{min-width:0;padding:28px}
+    .topbar{display:flex;align-items:center;justify-content:space-between;gap:18px;background:#fff;border-radius:var(--radius);padding:22px 24px;box-shadow:0 10px 35px rgba(14,33,58,.08);margin-bottom:22px}
+    .kicker{display:inline-flex;align-items:center;gap:8px;padding:6px 10px;border-radius:999px;background:#e9f7f6;color:var(--brand);font-size:12px;font-weight:900;letter-spacing:.05em;text-transform:uppercase;margin-bottom:8px}
+    h2{margin:0;font-size:28px;letter-spacing:-.03em;color:#101c2c}
+    .topbar p{margin:6px 0 0;color:var(--muted)}
+    .actions{display:flex;gap:10px;flex-wrap:wrap;justify-content:flex-end}
+    .view{animation:fade .18s ease}
+    @keyframes fade{from{opacity:.2;transform:translateY(6px)}to{opacity:1;transform:none}}
+    .cards{display:grid;grid-template-columns:repeat(6,minmax(150px,1fr));gap:14px;margin-bottom:20px}
+    .stat{background:#fff;border-radius:20px;padding:17px;box-shadow:0 10px 26px rgba(14,33,58,.07);border:1px solid rgba(217,226,238,.7);position:relative;overflow:hidden}
+    .stat:after{content:"";position:absolute;right:-22px;top:-22px;width:78px;height:78px;border-radius:50%;background:rgba(15,139,141,.12)}
+    .stat.danger:after{background:rgba(214,69,69,.13)}
+    .stat.gold:after{background:rgba(244,185,66,.20)}
+    .stat.purple:after{background:rgba(109,76,194,.13)}
+    .stat span{display:block;color:var(--muted);font-size:12px;font-weight:900;text-transform:uppercase;letter-spacing:.04em}
+    .stat strong{display:block;margin-top:8px;font-size:31px;color:#0d1728;line-height:1}
+    .grid2{display:grid;grid-template-columns:1.2fr .8fr;gap:18px}
+    .grid3{display:grid;grid-template-columns:repeat(3,1fr);gap:18px}
+    .panel{background:#fff;border-radius:var(--radius);padding:20px;box-shadow:0 10px 28px rgba(14,33,58,.07);border:1px solid rgba(217,226,238,.8)}
+    .panel h3{margin:0 0 14px;font-size:18px;color:#17243a}
+    .muted{color:var(--muted)}
+    .small{font-size:12px}
+    .list{display:flex;flex-direction:column;gap:10px}
+    .item{border:1px solid var(--line);background:#fbfdff;border-radius:16px;padding:13px;display:flex;gap:12px;align-items:center;justify-content:space-between}
+    .item-main{min-width:0}
+    .item-main strong{display:block;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;color:#162237}
+    .item-main small{display:block;color:var(--muted);margin-top:4px}
+    .badge{display:inline-flex;align-items:center;justify-content:center;border-radius:999px;padding:6px 10px;font-size:12px;font-weight:900;background:#eef4fb;color:#31516a;border:1px solid #dbe7f2;white-space:nowrap}
+    .badge.red{background:#fff1f1;color:#b42318;border-color:#ffd0d0}.badge.gold{background:#fff7df;color:#875700;border-color:#ffe29b}.badge.green{background:#e9f8ef;color:#12603c;border-color:#bce9ce}.badge.blue{background:#edf5ff;color:#174f91;border-color:#cfe3ff}.badge.purple{background:#f4f0ff;color:#5636a3;border-color:#dfd5ff}.badge.orange{background:#fff2e8;color:#a64a0a;border-color:#ffd3b3}
+    .bar-row{display:grid;grid-template-columns:150px 1fr 38px;align-items:center;gap:10px;font-size:13px;font-weight:800;color:#38506a}
+    .bar{height:10px;background:#edf2f7;border-radius:999px;overflow:hidden}.bar i{display:block;height:100%;border-radius:999px;background:linear-gradient(90deg,var(--brand2),var(--gold))}
+    .toolbar{display:grid;grid-template-columns:1.3fr .75fr .75fr .75fr;gap:12px;margin-bottom:14px}.toolbar .btn{padding:11px 14px}
+    .table-wrap{background:#fff;border-radius:var(--radius);box-shadow:0 10px 28px rgba(14,33,58,.07);border:1px solid rgba(217,226,238,.8);overflow:auto}
+    table{width:100%;border-collapse:separate;border-spacing:0;min-width:920px}
+    thead th{background:#f7fafc;color:#51677f;text-transform:uppercase;letter-spacing:.04em;font-size:12px;text-align:left;padding:14px;border-bottom:1px solid var(--line)}
+    tbody td{padding:14px;border-bottom:1px solid #eef2f7;vertical-align:middle;font-size:14px}
+    tbody tr:hover{background:#fbfdff}
+    .subject{max-width:340px}.subject strong{display:block;color:#111d30}.subject small{display:block;color:var(--muted);margin-top:4px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+    .progress{min-width:120px}.progress .line{height:8px;border-radius:999px;background:#edf2f7;overflow:hidden}.progress .line i{display:block;height:100%;background:linear-gradient(90deg,var(--brand2),var(--green))}.progress small{display:block;color:var(--muted);font-weight:800;margin-top:5px}
+    .detail{display:grid;grid-template-columns:.85fr 1.15fr;gap:18px}.process-card{background:linear-gradient(135deg,#10213a,#0c4a4c);color:#fff;border-radius:24px;padding:22px;box-shadow:0 18px 40px rgba(13,38,64,.18)}.process-card h3{margin:10px 0 8px;font-size:23px;color:#fff}.process-card p{color:#c7d9e9;line-height:1.45}.process-meta{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:18px}.mini{background:rgba(255,255,255,.09);border:1px solid rgba(255,255,255,.12);border-radius:16px;padding:12px}.mini span{display:block;color:#aac5d8;font-size:11px;text-transform:uppercase;font-weight:900}.mini strong{display:block;color:#fff;margin-top:4px}
+    .checklist{display:flex;flex-direction:column;gap:10px}.task{display:flex;align-items:center;gap:12px;border:1px solid var(--line);border-radius:16px;padding:12px;background:#fbfdff}.task.done{background:#eefaf3;border-color:#c6ead5;color:#607a6b}.task input{width:20px;height:20px;accent-color:var(--green)}.task strong{font-size:14px}.task small{color:var(--muted)}
+    .note-form{display:grid;gap:10px;margin-bottom:14px}.note{align-items:flex-start}.note p{margin:0;line-height:1.45}.note small{margin-top:8px}
+    .kanban{display:grid;grid-template-columns:repeat(5,minmax(230px,1fr));gap:14px;overflow:auto;padding-bottom:8px}.col{background:#f6f9fd;border:1px solid var(--line);border-radius:20px;padding:12px;min-height:360px}.col h3{font-size:14px;display:flex;align-items:center;justify-content:space-between;margin:0 0 12px}.card-mini{background:#fff;border:1px solid #e5edf6;border-radius:16px;padding:13px;margin-bottom:10px;box-shadow:0 8px 18px rgba(14,33,58,.05)}.card-mini strong{display:block;color:#162237;font-size:14px}.card-mini small{display:block;color:var(--muted);margin-top:7px;line-height:1.35}.card-mini .row{display:flex;align-items:center;justify-content:space-between;gap:8px;margin-top:10px}
+    .templates{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:14px}.template{border:1px solid var(--line);border-radius:20px;padding:16px;background:#fbfdff}.template h3{display:flex;align-items:center;justify-content:space-between;gap:10px;margin-bottom:10px}.template ol{margin:0;padding-left:22px;color:#465e76;line-height:1.8;font-size:14px}
+    dialog{border:0;border-radius:26px;padding:0;box-shadow:0 30px 95px rgba(0,0,0,.36);width:min(920px,calc(100vw - 28px));max-height:92vh;overflow:auto}dialog::backdrop{background:rgba(4,10,19,.72);backdrop-filter:blur(6px)}.dialog-card{padding:24px;background:#fff}.dialog-head{display:flex;align-items:center;justify-content:space-between;gap:14px;margin-bottom:18px}.dialog-head h3{margin:0;font-size:23px}.x{border:0;background:#f0f5f8;border-radius:12px;width:40px;height:40px;font-size:24px;color:#51677f}.form-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:12px}.wide{grid-column:1/-1}.dialog-actions{display:flex;justify-content:flex-end;gap:10px;margin-top:14px;flex-wrap:wrap}
+    .empty{background:#fff;border:1px dashed #b8c9da;border-radius:24px;padding:32px;text-align:center;color:#64748b}.empty strong{display:block;color:#26384d;font-size:20px;margin-bottom:8px}
+    @media(max-width:1200px){.cards{grid-template-columns:repeat(3,1fr)}.grid2,.detail{grid-template-columns:1fr}.toolbar{grid-template-columns:1fr 1fr}.templates{grid-template-columns:1fr}.kanban{grid-template-columns:repeat(3,minmax(230px,1fr))}}
+    @media(max-width:820px){.app{grid-template-columns:1fr}.sidebar{position:relative;min-height:auto}.content{padding:16px}.topbar{align-items:flex-start;flex-direction:column}.cards{grid-template-columns:1fr 1fr}.toolbar{grid-template-columns:1fr}.form-grid{grid-template-columns:1fr}.process-meta{grid-template-columns:1fr}.kanban{grid-template-columns:1fr}.actions{justify-content:flex-start}}
+  </style>
+</head>
+<body>
+<script>
+/* ============================================================
+   CONFIGURAÇÃO DO SUPABASE
+   1) Crie o projeto no Supabase
+   2) Rode o arquivo SUPABASE_SQL_COMPLETO.sql
+   3) Em Project Settings > API, copie URL e anon public key
+   4) Cole abaixo, salve e suba este index.html no GitHub
+============================================================ */
+const SUPABASE_URL = "https://cjtwpbeiumpmipfmrzeh.supabase.co";
+const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImNqdHdwYmVpdW1wbWlwZm1yemVoIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODE3MDA0NTYsImV4cCI6MjA5NzI3NjQ1Nn0.8fi-RgvH6obQQcAdru6N4RAtf35xQgStKmVCG8C0g8A";
+</script>
+
+<section id="auth" class="auth">
+  <div class="auth-card">
+    <div class="mark">DPC</div>
+    <h1>Planeja SEMEC</h1>
+    <p>Departamento de Planejamento, Captação de Recursos, Conselhos, Pareceres, Relatórios e Órgãos de Controle.</p>
+    <form id="loginForm">
+      <label class="field"><span>E-mail</span><input id="email" type="email" autocomplete="email" placeholder="usuario@semec.gov.br" /></label>
+      <label class="field"><span>Senha</span><input id="password" type="password" autocomplete="current-password" placeholder="••••••••" /></label>
+      <button class="btn primary full" type="submit">Entrar no sistema</button>
+    </form>
+    <div id="demoBox" class="demo-note hidden">
+      O Supabase ainda não foi configurado. O sistema abriu em <strong>modo visual de demonstração</strong>. Depois de colar URL e anon key no topo do arquivo, o login real será ativado.
+    </div>
+    <p id="authMsg" class="message"></p>
+  </div>
+</section>
+
+<main id="app" class="app hidden">
+  <aside class="sidebar">
+    <div class="brand">
+      <div class="mark sm">DPC</div>
+      <div>
+        <strong>Planeja SEMEC</strong>
+        <small>Planejamento • Captação • MP • Conselhos • Relatórios</small>
+      </div>
+    </div>
+    <nav class="nav">
+      <button class="active" data-view="dashboard">📊 Dashboard</button>
+      <button data-view="processos">📁 Central de Processos</button>
+      <button data-view="tarefas">✅ Tarefas do Processo</button>
+      <button data-view="kanban">🧭 Quadro Visual</button>
+      <button data-view="modelos">🧩 Modelos Prontos</button>
+    </nav>
+    <button id="logoutBtn" class="btn ghost full">Sair</button>
+    <div class="sidebar-footer">
+      <strong>Regra do departamento:</strong><br>
+      Chegou demanda técnica, registra. Tem prazo, controla. Produziu documento, vincula. Enviou, arquiva.
+    </div>
+  </aside>
+
+  <section class="content">
+    <header class="topbar">
+      <div>
+        <span class="kicker" id="modeLabel">Sistema interno</span>
+        <h2 id="pageTitle">Dashboard</h2>
+        <p id="pageSubtitle">Visão geral dos processos, prazos críticos e pendências do departamento.</p>
+      </div>
+      <div class="actions">
+        <button id="refreshBtn" class="btn ghost">Atualizar</button>
+        <button id="exportBtn" class="btn ghost">Exportar CSV</button>
+        <button id="newBtn" class="btn primary">+ Novo processo</button>
+      </div>
+    </header>
+
+    <section id="dashboardView" class="view">
+      <div class="cards">
+        <article class="stat"><span>Processos abertos</span><strong id="statOpen">0</strong></article>
+        <article class="stat danger"><span>Atrasados</span><strong id="statLate">0</strong></article>
+        <article class="stat gold"><span>Vencem em 7 dias</span><strong id="statSoon">0</strong></article>
+        <article class="stat purple"><span>Aguardando André</span><strong id="statAndre">0</strong></article>
+        <article class="stat"><span>MP / Controle</span><strong id="statMp">0</strong></article>
+        <article class="stat"><span>Captação</span><strong id="statCaptacao">0</strong></article>
+      </div>
+      <div class="grid2">
+        <section class="panel">
+          <h3>Prazos críticos</h3>
+          <div id="criticalList" class="list"></div>
+        </section>
+        <section class="panel">
+          <h3>Distribuição por tipo</h3>
+          <div id="typeBars" class="list"></div>
+        </section>
+      </div>
+      <div class="grid3" style="margin-top:18px">
+        <section class="panel"><h3>Em revisão com André</h3><div id="andreList" class="list"></div></section>
+        <section class="panel"><h3>MP e Órgãos de Controle</h3><div id="mpList" class="list"></div></section>
+        <section class="panel"><h3>Captação de recursos</h3><div id="captacaoList" class="list"></div></section>
+      </div>
+    </section>
+
+    <section id="processosView" class="view hidden">
+      <div class="toolbar">
+        <input id="search" type="search" placeholder="Pesquisar por assunto, origem, responsável, setor...">
+        <select id="filterTipo"><option value="">Todos os tipos</option></select>
+        <select id="filterStatus"><option value="">Todos os status</option></select>
+        <button id="clearFilters" class="btn ghost">Limpar filtros</button>
+      </div>
+      <div class="table-wrap">
+        <table>
+          <thead><tr><th>Nº</th><th>Tipo</th><th>Assunto</th><th>Responsável</th><th>Prazo</th><th>Status</th><th>Checklist</th><th></th></tr></thead>
+          <tbody id="tableBody"></tbody>
+        </table>
+      </div>
+    </section>
+
+    <section id="tarefasView" class="view hidden">
+      <div id="emptyDetail" class="empty"><strong>Nenhum processo selecionado</strong>Abra um processo na Central de Processos para acompanhar checklist, notas e documentos.</div>
+      <div id="detailArea" class="detail hidden">
+        <section class="process-card">
+          <span class="badge gold" id="detailTipo">Tipo</span>
+          <h3 id="detailTitle">Processo</h3>
+          <p id="detailDesc">Descrição</p>
+          <div class="process-meta">
+            <div class="mini"><span>Status</span><strong id="detailStatus">-</strong></div>
+            <div class="mini"><span>Responsável</span><strong id="detailResp">-</strong></div>
+            <div class="mini"><span>Prazo interno</span><strong id="detailPrazo">-</strong></div>
+            <div class="mini"><span>Origem</span><strong id="detailOrigem">-</strong></div>
+          </div>
+          <div class="dialog-actions" style="justify-content:flex-start;margin-top:18px">
+            <button id="editBtn" class="btn gold" type="button">Editar processo</button>
+            <a id="driveBtn" class="btn ghost" target="_blank" rel="noreferrer">Abrir Drive</a>
+          </div>
+        </section>
+        <section class="panel">
+          <h3>Checklist automático</h3>
+          <div id="taskList" class="checklist"></div>
+        </section>
+        <section class="panel">
+          <h3>Histórico e observações</h3>
+          <form id="noteForm" class="note-form">
+            <textarea id="noteText" placeholder="Ex: solicitada informação à escola, documento enviado para assinatura, resposta protocolada..."></textarea>
+            <button class="btn primary" type="submit">Adicionar nota</button>
+          </form>
+          <div id="notesList" class="list"></div>
+        </section>
+        <section class="panel">
+          <h3>Resumo operacional</h3>
+          <div id="detailSummary" class="list"></div>
+        </section>
+      </div>
+    </section>
+
+    <section id="kanbanView" class="view hidden">
+      <div class="kanban" id="kanban"></div>
+    </section>
+
+    <section id="modelosView" class="view hidden">
+      <div class="panel" style="margin-bottom:16px">
+        <h3>Modelos de tarefas prontas</h3>
+        <p class="muted">Ao criar um processo, o sistema usa o tipo escolhido para abrir automaticamente o checklist correto.</p>
+      </div>
+      <div class="templates" id="templatesBox"></div>
+    </section>
+  </section>
+</main>
+
+<dialog id="dialog">
+  <form id="processForm" class="dialog-card">
+    <div class="dialog-head">
+      <h3 id="dialogTitle">Novo processo</h3>
+      <button type="button" class="x" id="closeDialog">×</button>
+    </div>
+    <input type="hidden" id="processId">
+    <div class="form-grid">
+      <label class="field"><span>Nº interno</span><input id="numero" placeholder="DPC-001/2026"></label>
+      <label class="field"><span>Data de entrada</span><input id="dataEntrada" type="date" required></label>
+      <label class="field"><span>Tipo de processo</span><select id="tipo" required></select></label>
+      <label class="field"><span>Prioridade</span><select id="prioridade" required></select></label>
+      <label class="field"><span>Status</span><select id="status" required></select></label>
+      <label class="field"><span>Responsável</span><input id="responsavel" placeholder="André / Andressa / Setor"></label>
+      <label class="field"><span>Origem</span><input id="origem" placeholder="MP, FNDE, Conselho, Escola..."></label>
+      <label class="field"><span>Prazo oficial</span><input id="prazoOficial" type="date"></label>
+      <label class="field"><span>Prazo interno</span><input id="prazoInterno" type="date"></label>
+      <label class="field"><span>Setor envolvido</span><input id="setor" placeholder="Transporte, jurídico, escola, engenharia..."></label>
+      <label class="field wide"><span>Assunto</span><input id="assunto" required placeholder="Resumo claro do processo"></label>
+      <label class="field wide"><span>Descrição</span><textarea id="descricao" placeholder="Descreva a demanda, o que precisa ser produzido e qualquer detalhe importante"></textarea></label>
+      <label class="field wide"><span>Link da pasta ou documento no Drive</span><input id="linkDrive" type="url" placeholder="https://drive.google.com/..."></label>
+    </div>
+    <div class="dialog-actions">
+      <button class="btn ghost" type="button" id="cancelDialog">Cancelar</button>
+      <button class="btn primary" type="submit">Salvar processo</button>
+    </div>
+    <p id="formMsg" class="message"></p>
+  </form>
+</dialog>
+
+<script>
+const configured = SUPABASE_URL.startsWith('http') && SUPABASE_ANON_KEY.length > 40;
+const client = configured ? supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY) : null;
+const TYPES = [
+  ['CAPTACAO_RECURSOS','Captação de Recursos','💰'],
+  ['MP_ORGAOS_CONTROLE','MP / Órgãos de Controle','⚖️'],
+  ['CONSELHOS','Conselhos','🏛️'],
+  ['PARECER_RELATORIO','Pareceres e Relatórios','📑'],
+  ['SISTEMAS_OFICIAIS','Sistemas Oficiais','🖥️'],
+  ['PLANEJAMENTO','Planejamento','🧭'],
+  ['DOCUMENTO_TECNICO','Documento Técnico','✍️']
+];
+const STATUS = ['Novo','Classificado','Em elaboração','Aguardando informações','Aguardando revisão do André','Aguardando assinatura','Enviado/Protocolado','Concluído','Arquivado','Suspenso'];
+const PRIOR = ['Urgente','Alta','Média','Baixa'];
+const FINAL = ['Concluído','Arquivado','Enviado/Protocolado'];
+const DEFAULT_TEMPLATES = [
+  ['CAPTACAO_RECURSOS','Identificar fonte do recurso: SIMEC, PAR, FNDE, emenda, convênio ou programa.',1],
+  ['CAPTACAO_RECURSOS','Levantar diagnóstico da necessidade: escola, quantidade, público atendido e justificativa.',2],
+  ['CAPTACAO_RECURSOS','Separar documentos obrigatórios: ofício, fotos, dados da rede, cotações ou declarações.',3],
+  ['CAPTACAO_RECURSOS','Elaborar justificativa técnica para captação.',4],
+  ['CAPTACAO_RECURSOS','Enviar para revisão do André.',5],
+  ['CAPTACAO_RECURSOS','Protocolar/submeter no sistema ou encaminhar ao órgão responsável.',6],
+  ['CAPTACAO_RECURSOS','Arquivar comprovante de envio e registrar próximo acompanhamento.',7],
+  ['MP_ORGAOS_CONTROLE','Registrar ofício, recomendação, notificação ou requisição recebida.',1],
+  ['MP_ORGAOS_CONTROLE','Identificar prazo oficial de resposta e criar prazo interno anterior.',2],
+  ['MP_ORGAOS_CONTROLE','Levantar informações com setores envolvidos.',3],
+  ['MP_ORGAOS_CONTROLE','Separar documentos comprobatórios e evidências.',4],
+  ['MP_ORGAOS_CONTROLE','Elaborar relatório técnico, resposta ou manifestação.',5],
+  ['MP_ORGAOS_CONTROLE','Enviar para revisão do André.',6],
+  ['MP_ORGAOS_CONTROLE','Colher assinatura/autorização e protocolar resposta.',7],
+  ['MP_ORGAOS_CONTROLE','Arquivar resposta protocolada e comprovante.',8],
+  ['CONSELHOS','Identificar conselho: CME, CAE, CACS-FUNDEB ou outro.',1],
+  ['CONSELHOS','Registrar assunto, reunião, pauta ou solicitação.',2],
+  ['CONSELHOS','Separar atas, resoluções, pareceres ou documentos de apoio.',3],
+  ['CONSELHOS','Preparar minuta de parecer, ata, resolução ou relatório.',4],
+  ['CONSELHOS','Enviar para conferência e assinatura dos responsáveis.',5],
+  ['CONSELHOS','Arquivar versão final assinada.',6],
+  ['PARECER_RELATORIO','Definir objetivo do documento técnico.',1],
+  ['PARECER_RELATORIO','Coletar dados, legislação, documentos e evidências.',2],
+  ['PARECER_RELATORIO','Estruturar diagnóstico, análise e conclusão.',3],
+  ['PARECER_RELATORIO','Redigir parecer, relatório ou nota técnica.',4],
+  ['PARECER_RELATORIO','Enviar para revisão do André.',5],
+  ['PARECER_RELATORIO','Finalizar versão em PDF e arquivar.',6],
+  ['SISTEMAS_OFICIAIS','Identificar sistema: SIMEC, PAR, FNDE, INEP, PDDE, PNAE ou outro.',1],
+  ['SISTEMAS_OFICIAIS','Verificar pendência, diligência ou janela de preenchimento.',2],
+  ['SISTEMAS_OFICIAIS','Separar dados e documentos necessários.',3],
+  ['SISTEMAS_OFICIAIS','Realizar preenchimento/atualização no sistema.',4],
+  ['SISTEMAS_OFICIAIS','Salvar comprovante, protocolo ou print da tela.',5],
+  ['SISTEMAS_OFICIAIS','Registrar próximo prazo de acompanhamento.',6],
+  ['PLANEJAMENTO','Definir problema, meta ou demanda de planejamento.',1],
+  ['PLANEJAMENTO','Levantar dados da rede, escolas, matrículas, transporte ou programas.',2],
+  ['PLANEJAMENTO','Organizar diagnóstico e proposta de ação.',3],
+  ['PLANEJAMENTO','Elaborar plano, cronograma ou relatório.',4],
+  ['PLANEJAMENTO','Validar com André e encaminhar ao setor responsável.',5],
+  ['DOCUMENTO_TECNICO','Identificar tipo de documento: ofício, declaração, despacho, justificativa ou memorando.',1],
+  ['DOCUMENTO_TECNICO','Confirmar dados obrigatórios: nomes, datas, assunto, destinatário e fundamento.',2],
+  ['DOCUMENTO_TECNICO','Redigir minuta no padrão institucional.',3],
+  ['DOCUMENTO_TECNICO','Enviar para revisão/assinatura.',4],
+  ['DOCUMENTO_TECNICO','Gerar PDF, enviar e arquivar versão final.',5]
+];
+const DEMO = [
+  {id:'demo1',numero_interno:'DPC-001/2026',data_entrada:'2026-06-17',tipo:'MP_ORGAOS_CONTROLE',origem:'Ministério Público',assunto:'Resposta técnica sobre transporte escolar rural',descricao:'Organizar relatório com rotas, alunos atendidos, veículos e providências adotadas.',prioridade:'Urgente',prazo_oficial:'2026-06-20',prazo_interno:'2026-06-19',responsavel:'André',setor_envolvido:'Transporte Escolar',status:'Aguardando revisão do André',link_drive:''},
+  {id:'demo2',numero_interno:'DPC-002/2026',data_entrada:'2026-06-17',tipo:'CAPTACAO_RECURSOS',origem:'SIMEC / PAR',assunto:'Pedido de ônibus escolar',descricao:'Preparar justificativa técnica e documentação para solicitação de veículos escolares.',prioridade:'Alta',prazo_oficial:'2026-06-25',prazo_interno:'2026-06-21',responsavel:'Andressa',setor_envolvido:'Planejamento',status:'Em elaboração',link_drive:''},
+  {id:'demo3',numero_interno:'DPC-003/2026',data_entrada:'2026-06-16',tipo:'CONSELHOS',origem:'CAE',assunto:'Parecer sobre alimentação escolar',descricao:'Organizar documentos do CAE e minuta de parecer.',prioridade:'Média',prazo_oficial:'2026-06-24',prazo_interno:'2026-06-22',responsavel:'Andressa',setor_envolvido:'Conselhos',status:'Aguardando informações',link_drive:''},
+  {id:'demo4',numero_interno:'DPC-004/2026',data_entrada:'2026-06-15',tipo:'PARECER_RELATORIO',origem:'SEMEC',assunto:'Relatório de execução de metas do PME',descricao:'Consolidar dados e elaborar relatório técnico para acompanhamento interno.',prioridade:'Alta',prazo_oficial:'2026-06-30',prazo_interno:'2026-06-26',responsavel:'André',setor_envolvido:'Planejamento',status:'Novo',link_drive:''}
+];
+let state = {session:null,processos:[],tasks:[],notes:[],selected:null,templates:[]};
+const $ = id => document.getElementById(id);
+const today = () => new Date().toISOString().slice(0,10);
+const fmt = d => d ? new Date(d+'T00:00:00').toLocaleDateString('pt-BR') : '-';
+const typeInfo = t => TYPES.find(x=>x[0]===t) || [t,t,'•'];
+const typeLabel = t => typeInfo(t)[1];
+const icon = t => typeInfo(t)[2];
+const norm = v => (v||'').toString().toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g,'');
+const uid = () => crypto.randomUUID ? crypto.randomUUID() : String(Date.now()+Math.random());
+const escapeHtml = s => (s||'').toString().replace(/[&<>"']/g,m=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#039;'}[m]));
+
+function seedLocal(){
+  const saved = localStorage.getItem('planeja_local');
+  if(saved){state = {...state,...JSON.parse(saved)}; return;}
+  state.processos = DEMO;
+  state.tasks = [];
+  state.notes = [{id:uid(),process_id:'demo1',note:'Exemplo: já solicitamos ao setor de transporte as rotas atualizadas e relação de alunos.',created_at:new Date().toISOString()}];
+  state.templates = DEFAULT_TEMPLATES.map(([process_type,title,sort_order])=>({id:uid(),process_type,title,sort_order,required:true}));
+  DEMO.forEach(p => createLocalTasks(p));
+  saveLocal();
+}
+function saveLocal(){ if(!configured) localStorage.setItem('planeja_local',JSON.stringify({processos:state.processos,tasks:state.tasks,notes:state.notes,templates:state.templates})); }
+function createLocalTasks(p){
+  DEFAULT_TEMPLATES.filter(x=>x[0]===p.tipo).forEach(([process_type,title,sort_order])=>{
+    state.tasks.push({id:uid(),process_id:p.id,title,sort_order,required:true,done:false,created_at:new Date().toISOString()});
+  });
+}
+
+function fillSelects(){
+  TYPES.forEach(([v,l,e])=>{
+    $('tipo').insertAdjacentHTML('beforeend',`<option value="${v}">${e} ${l}</option>`);
+    $('filterTipo').insertAdjacentHTML('beforeend',`<option value="${v}">${e} ${l}</option>`);
+  });
+  PRIOR.forEach(v=>$('prioridade').insertAdjacentHTML('beforeend',`<option>${v}</option>`));
+  STATUS.forEach(v=>{
+    $('status').insertAdjacentHTML('beforeend',`<option>${v}</option>`);
+    $('filterStatus').insertAdjacentHTML('beforeend',`<option>${v}</option>`);
+  });
+}
+function bind(){
+  document.querySelectorAll('.nav button').forEach(btn=>btn.addEventListener('click',()=>switchView(btn.dataset.view)));
+  $('loginForm').addEventListener('submit',login);
+  $('logoutBtn').addEventListener('click',logout);
+  $('newBtn').addEventListener('click',()=>openDialog());
+  $('closeDialog').addEventListener('click',()=>$('dialog').close());
+  $('cancelDialog').addEventListener('click',()=>$('dialog').close());
+  $('processForm').addEventListener('submit',saveProcess);
+  $('search').addEventListener('input',renderTable);
+  $('filterTipo').addEventListener('change',renderTable);
+  $('filterStatus').addEventListener('change',renderTable);
+  $('clearFilters').addEventListener('click',()=>{$('search').value='';$('filterTipo').value='';$('filterStatus').value='';renderTable();});
+  $('refreshBtn').addEventListener('click',loadAll);
+  $('exportBtn').addEventListener('click',exportCSV);
+  $('editBtn').addEventListener('click',()=>openDialog(state.selected));
+  $('noteForm').addEventListener('submit',addNote);
+}
+async function init(){
+  fillSelects(); bind();
+  if(!configured){
+    $('demoBox').classList.remove('hidden'); $('auth').classList.add('hidden'); $('app').classList.remove('hidden'); $('modeLabel').textContent='Modo demonstração visual'; seedLocal(); renderAll(); return;
+  }
+  const {data} = await client.auth.getSession(); state.session = data.session;
+  client.auth.onAuthStateChange(async(_,session)=>{state.session=session; toggleAuth(!!session); if(session) await loadAll();});
+  toggleAuth(!!state.session); if(state.session) await loadAll();
+}
+function toggleAuth(on){$('auth').classList.toggle('hidden',on);$('app').classList.toggle('hidden',!on);}
+async function login(e){
+  e.preventDefault();
+  if(!configured) return;
+  $('authMsg').textContent='Entrando...';
+  const {error}=await client.auth.signInWithPassword({email:$('email').value.trim(),password:$('password').value});
+  $('authMsg').textContent=error ? 'Erro: '+error.message : '';
+}
+async function logout(){ if(configured) await client.auth.signOut(); else {localStorage.removeItem('planeja_local'); location.reload();} }
+async function loadAll(){
+  if(!configured){saveLocal(); renderAll(); return;}
+  const [p,t,n,templ] = await Promise.all([
+    client.from('processes').select('*').order('created_at',{ascending:false}),
+    client.from('process_tasks').select('*').order('sort_order'),
+    client.from('process_notes').select('*').order('created_at',{ascending:false}),
+    client.from('task_templates').select('*').order('process_type').order('sort_order')
+  ]);
+  if(p.error){alert('Erro ao carregar processos: '+p.error.message);return;}
+  state.processos=p.data||[]; state.tasks=t.data||[]; state.notes=n.data||[]; state.templates=(templ.data&&templ.data.length)?templ.data:DEFAULT_TEMPLATES.map(([process_type,title,sort_order])=>({id:uid(),process_type,title,sort_order,required:true}));
+  renderAll();
+}
+function renderAll(){renderDashboard();renderTable();renderKanban();renderTemplates();if(state.selected) selectProcess(state.selected.id,false);}
+function switchView(v){
+  document.querySelectorAll('.nav button').forEach(b=>b.classList.toggle('active',b.dataset.view===v));
+  document.querySelectorAll('.view').forEach(x=>x.classList.add('hidden'));
+  $(v+'View').classList.remove('hidden');
+  const map={dashboard:['Dashboard','Visão geral dos processos, prazos críticos e pendências do departamento.'],processos:['Central de Processos','Controle de tudo que chega ao departamento, com responsável, prazo, status e checklist.'],tarefas:['Tarefas do Processo','Checklist automático, histórico e andamento do processo selecionado.'],kanban:['Quadro Visual','Visão por etapas para acompanhar gargalos e prioridades.'],modelos:['Modelos Prontos','Fluxos automáticos por tipo de processo.']};
+  $('pageTitle').textContent=map[v][0]; $('pageSubtitle').textContent=map[v][1];
+}
+function isOpen(p){return !FINAL.includes(p.status)}
+function due(p){return p.prazo_interno || p.prazo_oficial || ''}
+function daysTo(d){ if(!d) return 9999; return Math.ceil((new Date(d+'T00:00:00') - new Date(today()+'T00:00:00'))/86400000);}
+function statusBadge(s){let c=s==='Concluído'||s==='Enviado/Protocolado'?'green':s.includes('Aguardando')?'gold':s==='Suspenso'?'red':s==='Em elaboração'?'blue':'purple'; return `<span class="badge ${c}">${escapeHtml(s)}</span>`;}
+function priorityBadge(p){let c=p==='Urgente'?'red':p==='Alta'?'orange':p==='Média'?'blue':'green'; return `<span class="badge ${c}">${escapeHtml(p)}</span>`;}
+function taskProgress(pid){const ts=state.tasks.filter(t=>t.process_id===pid); const done=ts.filter(t=>t.done).length; return {total:ts.length,done,pct:ts.length?Math.round(done/ts.length*100):0};}
+function renderDashboard(){
+  const open=state.processos.filter(isOpen);
+  $('statOpen').textContent=open.length;
+  $('statLate').textContent=open.filter(p=>due(p)&&daysTo(due(p))<0).length;
+  $('statSoon').textContent=open.filter(p=>due(p)&&daysTo(due(p))>=0&&daysTo(due(p))<=7).length;
+  $('statAndre').textContent=open.filter(p=>p.status==='Aguardando revisão do André'||norm(p.responsavel).includes('andre')).length;
+  $('statMp').textContent=open.filter(p=>p.tipo==='MP_ORGAOS_CONTROLE').length;
+  $('statCaptacao').textContent=open.filter(p=>p.tipo==='CAPTACAO_RECURSOS').length;
+  const critical=open.filter(p=>due(p)).sort((a,b)=>daysTo(due(a))-daysTo(due(b))).slice(0,7);
+  $('criticalList').innerHTML = critical.length?critical.map(itemHtml).join(''):'<div class="empty"><strong>Sem prazos críticos</strong>Nenhuma pendência com prazo próximo cadastrada.</div>';
+  const max=Math.max(1,...TYPES.map(([v])=>state.processos.filter(p=>p.tipo===v).length));
+  $('typeBars').innerHTML=TYPES.map(([v,l,e])=>{const n=state.processos.filter(p=>p.tipo===v).length; return `<div class="bar-row"><span>${e} ${l}</span><div class="bar"><i style="width:${(n/max)*100}%"></i></div><strong>${n}</strong></div>`}).join('');
+  $('andreList').innerHTML=listFor(p=>p.status==='Aguardando revisão do André'||norm(p.responsavel).includes('andre'));
+  $('mpList').innerHTML=listFor(p=>p.tipo==='MP_ORGAOS_CONTROLE');
+  $('captacaoList').innerHTML=listFor(p=>p.tipo==='CAPTACAO_RECURSOS');
+}
+function listFor(fn){const arr=state.processos.filter(p=>isOpen(p)&&fn(p)).slice(0,4); return arr.length?arr.map(itemHtml).join(''):'<span class="muted small">Nada aberto neste grupo.</span>';}
+function itemHtml(p){const d=daysTo(due(p)); const label=d<0?`${Math.abs(d)} dia(s) atrasado`:d===0?'vence hoje':d<9999?`vence em ${d} dia(s)`:'sem prazo'; return `<div class="item"><div class="item-main"><strong>${icon(p.tipo)} ${escapeHtml(p.assunto)}</strong><small>${escapeHtml(p.numero_interno||'-')} • ${escapeHtml(p.responsavel||'sem responsável')} • ${label}</small></div>${priorityBadge(p.prioridade||'Média')}</div>`;}
+function filtered(){const q=norm($('search')?.value||'');const tipo=$('filterTipo')?.value||'';const st=$('filterStatus')?.value||''; return state.processos.filter(p=>(!tipo||p.tipo===tipo)&&(!st||p.status===st)&&(!q||norm([p.numero_interno,p.assunto,p.origem,p.responsavel,p.setor_envolvido,p.descricao].join(' ')).includes(q)));}
+function renderTable(){
+  const rows=filtered();
+  $('tableBody').innerHTML=rows.length?rows.map(p=>{const prog=taskProgress(p.id);return `<tr><td><strong>${escapeHtml(p.numero_interno||'-')}</strong></td><td>${icon(p.tipo)} ${typeLabel(p.tipo)}</td><td class="subject"><strong>${escapeHtml(p.assunto)}</strong><small>${escapeHtml(p.origem||'')} ${p.setor_envolvido?'• '+escapeHtml(p.setor_envolvido):''}</small></td><td>${escapeHtml(p.responsavel||'-')}</td><td>${fmt(due(p))}</td><td>${statusBadge(p.status)}</td><td><div class="progress"><div class="line"><i style="width:${prog.pct}%"></i></div><small>${prog.done}/${prog.total} tarefas</small></div></td><td><button class="btn ghost" onclick="selectProcess('${p.id}')">Abrir</button></td></tr>`}).join(''):'<tr><td colspan="8" class="muted">Nenhum processo encontrado.</td></tr>';
+}
+function renderKanban(){
+  const cols=['Novo','Em elaboração','Aguardando informações','Aguardando revisão do André','Aguardando assinatura','Enviado/Protocolado','Concluído'];
+  $('kanban').innerHTML=cols.map(c=>{const arr=state.processos.filter(p=>p.status===c);return `<section class="col"><h3>${c}<span class="badge">${arr.length}</span></h3>${arr.map(p=>`<div class="card-mini"><strong>${icon(p.tipo)} ${escapeHtml(p.assunto)}</strong><small>${escapeHtml(p.numero_interno||'-')} • ${escapeHtml(p.responsavel||'sem responsável')}<br>Prazo: ${fmt(due(p))}</small><div class="row">${priorityBadge(p.prioridade||'Média')}<button class="btn ghost" onclick="selectProcess('${p.id}')">Abrir</button></div></div>`).join('')||'<span class="muted small">Sem processos.</span>'}</section>`}).join('');
+}
+function renderTemplates(){
+  const grouped = TYPES.map(([v,l,e])=>({v,l,e,items:state.templates.filter(t=>t.process_type===v).sort((a,b)=>a.sort_order-b.sort_order)}));
+  $('templatesBox').innerHTML=grouped.map(g=>`<section class="template"><h3>${g.e} ${g.l}<span class="badge">${g.items.length}</span></h3><ol>${g.items.map(i=>`<li>${escapeHtml(i.title)}</li>`).join('')}</ol></section>`).join('');
+}
+function openDialog(p=null){
+  $('processForm').reset(); $('processId').value=''; $('dataEntrada').value=today(); $('status').value='Novo'; $('prioridade').value='Média'; $('formMsg').textContent='';
+  $('dialogTitle').textContent=p?'Editar processo':'Novo processo';
+  if(p){$('processId').value=p.id;$('numero').value=p.numero_interno||'';$('dataEntrada').value=p.data_entrada||today();$('tipo').value=p.tipo;$('prioridade').value=p.prioridade||'Média';$('status').value=p.status||'Novo';$('responsavel').value=p.responsavel||'';$('origem').value=p.origem||'';$('prazoOficial').value=p.prazo_oficial||'';$('prazoInterno').value=p.prazo_interno||'';$('setor').value=p.setor_envolvido||'';$('assunto').value=p.assunto||'';$('descricao').value=p.descricao||'';$('linkDrive').value=p.link_drive||'';}
+  $('dialog').showModal();
+}
+async function saveProcess(e){
+  e.preventDefault();
+  const id=$('processId').value;
+  const obj={numero_interno:$('numero').value.trim(),data_entrada:$('dataEntrada').value,tipo:$('tipo').value,origem:$('origem').value.trim(),assunto:$('assunto').value.trim(),descricao:$('descricao').value.trim(),prioridade:$('prioridade').value,prazo_oficial:$('prazoOficial').value||null,prazo_interno:$('prazoInterno').value||null,responsavel:$('responsavel').value.trim(),setor_envolvido:$('setor').value.trim(),status:$('status').value,link_drive:$('linkDrive').value.trim()};
+  $('formMsg').textContent='Salvando...';
+  if(configured){
+    if(id){const {error}=await client.from('processes').update(obj).eq('id',id); if(error){$('formMsg').textContent=error.message;return;}}
+    else{const {data,error}=await client.from('processes').insert(obj).select().single(); if(error){$('formMsg').textContent=error.message;return;} await createDbTasks(data);}
+    $('dialog').close(); await loadAll(); return;
+  }
+  if(id){const ix=state.processos.findIndex(p=>p.id===id); state.processos[ix]={...state.processos[ix],...obj};}
+  else{const p={id:uid(),...obj,created_at:new Date().toISOString()}; state.processos.unshift(p); createLocalTasks(p);}
+  saveLocal(); $('dialog').close(); renderAll();
+}
+async function createDbTasks(p){
+  let templates=state.templates.filter(t=>t.process_type===p.tipo).sort((a,b)=>a.sort_order-b.sort_order);
+  if(!templates.length) templates=DEFAULT_TEMPLATES.filter(t=>t[0]===p.tipo).map(([process_type,title,sort_order])=>({process_type,title,sort_order,required:true}));
+  const rows=templates.map(t=>({process_id:p.id,template_id:t.id&&t.id.length>20?t.id:null,title:t.title,sort_order:t.sort_order,required:t.required??true}));
+  if(rows.length) await client.from('process_tasks').insert(rows);
+}
+window.selectProcess = async function(id,go=true){
+  state.selected=state.processos.find(p=>p.id===id); if(!state.selected)return;
+  if(go) switchView('tarefas');
+  $('emptyDetail').classList.add('hidden'); $('detailArea').classList.remove('hidden');
+  const p=state.selected; $('detailTipo').textContent=`${icon(p.tipo)} ${typeLabel(p.tipo)}`; $('detailTitle').textContent=`${p.numero_interno||'Sem número'} • ${p.assunto}`; $('detailDesc').textContent=p.descricao||'Sem descrição registrada.'; $('detailStatus').textContent=p.status||'-'; $('detailResp').textContent=p.responsavel||'-'; $('detailPrazo').textContent=fmt(due(p)); $('detailOrigem').textContent=p.origem||'-'; $('driveBtn').href=p.link_drive||'#'; $('driveBtn').classList.toggle('hidden',!p.link_drive);
+  renderTasks(); renderNotes(); renderDetailSummary();
+}
+function renderTasks(){
+  const tasks=state.tasks.filter(t=>t.process_id===state.selected.id).sort((a,b)=>a.sort_order-b.sort_order);
+  $('taskList').innerHTML=tasks.length?tasks.map(t=>`<label class="task ${t.done?'done':''}"><input type="checkbox" ${t.done?'checked':''} onchange="toggleTask('${t.id}',this.checked)"><div><strong>${escapeHtml(t.title)}</strong><small>${t.done?'Concluída':'Pendente'}</small></div></label>`).join(''):'<span class="muted">Sem checklist para este processo.</span>';
+}
+window.toggleTask = async function(id,done){
+  if(configured){await client.from('process_tasks').update({done,completed_at:done?new Date().toISOString():null}).eq('id',id); await loadAll(); return;}
+  const t=state.tasks.find(x=>x.id===id); if(t){t.done=done;t.completed_at=done?new Date().toISOString():null;saveLocal();renderAll();}
+}
+async function addNote(e){
+  e.preventDefault(); if(!state.selected||!$('noteText').value.trim())return;
+  const note=$('noteText').value.trim();
+  if(configured){await client.from('process_notes').insert({process_id:state.selected.id,note}); $('noteText').value=''; await loadAll(); return;}
+  state.notes.unshift({id:uid(),process_id:state.selected.id,note,created_at:new Date().toISOString()}); $('noteText').value=''; saveLocal(); renderNotes();
+}
+function renderNotes(){
+  const notes=state.notes.filter(n=>n.process_id===state.selected.id).sort((a,b)=>new Date(b.created_at)-new Date(a.created_at));
+  $('notesList').innerHTML=notes.length?notes.map(n=>`<div class="item note"><div class="item-main"><p>${escapeHtml(n.note)}</p><small>${new Date(n.created_at).toLocaleString('pt-BR')}</small></div></div>`).join(''):'<span class="muted small">Nenhuma observação registrada.</span>';
+}
+function renderDetailSummary(){
+  const prog=taskProgress(state.selected.id); const d=daysTo(due(state.selected)); const prazo=d<0?`${Math.abs(d)} dia(s) atrasado`:d===0?'vence hoje':d<9999?`vence em ${d} dia(s)`:'sem prazo';
+  $('detailSummary').innerHTML=`<div class="item"><div class="item-main"><strong>Andamento do checklist</strong><small>${prog.done} de ${prog.total} tarefas concluídas (${prog.pct}%)</small></div><span class="badge green">${prog.pct}%</span></div><div class="item"><div class="item-main"><strong>Situação do prazo</strong><small>${prazo}</small></div>${priorityBadge(state.selected.prioridade||'Média')}</div><div class="item"><div class="item-main"><strong>Setor envolvido</strong><small>${escapeHtml(state.selected.setor_envolvido||'não informado')}</small></div></div>`;
+}
+function exportCSV(){
+  const headers=['numero_interno','data_entrada','tipo','origem','assunto','prioridade','prazo_oficial','prazo_interno','responsavel','setor_envolvido','status','link_drive'];
+  const csv=[headers.join(';'),...state.processos.map(p=>headers.map(h=>`"${(p[h]||'').toString().replaceAll('"','""')}"`).join(';'))].join('\n');
+  const blob=new Blob([csv],{type:'text/csv;charset=utf-8;'}); const a=document.createElement('a'); a.href=URL.createObjectURL(blob); a.download='processos_planeja_semec.csv'; a.click(); URL.revokeObjectURL(a.href);
+}
+init();
+</script>
+</body>
+</html>

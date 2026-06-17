@@ -1,0 +1,30 @@
+PASSO A PASSO RÁPIDO - PLANEJA SEMEC
+
+1) TESTAR VISUALMENTE
+Abra o arquivo index.html no navegador.
+Ele vai abrir em modo demonstração se o Supabase ainda não estiver configurado.
+
+2) CRIAR BANCO NO SUPABASE
+Supabase > SQL Editor > New query > cole SUPABASE_SQL_COMPLETO.sql > Run.
+
+3) CRIAR USUÁRIOS
+Supabase > Authentication > Users > Add user.
+Crie um usuário para você e outro para Andressa.
+
+4) PEGAR CHAVES
+Supabase > Project Settings > API.
+Copie:
+- Project URL
+- anon public key
+
+5) COLAR NO SISTEMA
+Abra index.html e substitua:
+SUPABASE_URL
+SUPABASE_ANON_KEY
+
+6) SUBIR NO GITHUB
+No GitHub, suba somente o index.html na raiz.
+Depois ative GitHub Pages.
+
+7) USAR
+Cadastre processo > escolha o tipo > o sistema cria as tarefas automáticas.

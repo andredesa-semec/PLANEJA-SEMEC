@@ -1,0 +1,44 @@
+tipo;ordem;tarefa
+CAPTACAO_RECURSOS;1;Identificar fonte do recurso: SIMEC, PAR, FNDE, emenda, convênio ou programa.
+CAPTACAO_RECURSOS;2;Levantar diagnóstico da necessidade: escola, quantidade, público atendido e justificativa.
+CAPTACAO_RECURSOS;3;Separar documentos obrigatórios: ofício, fotos, dados da rede, cotações ou declarações.
+CAPTACAO_RECURSOS;4;Elaborar justificativa técnica para captação.
+CAPTACAO_RECURSOS;5;Enviar para revisão do André.
+CAPTACAO_RECURSOS;6;Protocolar/submeter no sistema ou encaminhar ao órgão responsável.
+CAPTACAO_RECURSOS;7;Arquivar comprovante de envio e registrar próximo acompanhamento.
+MP_ORGAOS_CONTROLE;1;Registrar ofício, recomendação, notificação ou requisição recebida.
+MP_ORGAOS_CONTROLE;2;Identificar prazo oficial de resposta e criar prazo interno anterior.
+MP_ORGAOS_CONTROLE;3;Levantar informações com setores envolvidos.
+MP_ORGAOS_CONTROLE;4;Separar documentos comprobatórios e evidências.
+MP_ORGAOS_CONTROLE;5;Elaborar relatório técnico, resposta ou manifestação.
+MP_ORGAOS_CONTROLE;6;Enviar para revisão do André.
+MP_ORGAOS_CONTROLE;7;Colher assinatura/autorização e protocolar resposta.
+MP_ORGAOS_CONTROLE;8;Arquivar resposta protocolada e comprovante.
+CONSELHOS;1;Identificar conselho: CME, CAE, CACS-FUNDEB ou outro.
+CONSELHOS;2;Registrar assunto, reunião, pauta ou solicitação.
+CONSELHOS;3;Separar atas, resoluções, pareceres ou documentos de apoio.
+CONSELHOS;4;Preparar minuta de parecer, ata, resolução ou relatório.
+CONSELHOS;5;Enviar para conferência e assinatura dos responsáveis.
+CONSELHOS;6;Arquivar versão final assinada.
+PARECER_RELATORIO;1;Definir objetivo do documento técnico.
+PARECER_RELATORIO;2;Coletar dados, legislação, documentos e evidências.
+PARECER_RELATORIO;3;Estruturar diagnóstico, análise e conclusão.
+PARECER_RELATORIO;4;Redigir parecer, relatório ou nota técnica.
+PARECER_RELATORIO;5;Enviar para revisão do André.
+PARECER_RELATORIO;6;Finalizar versão em PDF e arquivar.
+SISTEMAS_OFICIAIS;1;Identificar sistema: SIMEC, PAR, FNDE, INEP, PDDE, PNAE ou outro.
+SISTEMAS_OFICIAIS;2;Verificar pendência, diligência ou janela de preenchimento.
+SISTEMAS_OFICIAIS;3;Separar dados e documentos necessários.
+SISTEMAS_OFICIAIS;4;Realizar preenchimento/atualização no sistema.
+SISTEMAS_OFICIAIS;5;Salvar comprovante, protocolo ou print da tela.
+SISTEMAS_OFICIAIS;6;Registrar próximo prazo de acompanhamento.
+PLANEJAMENTO;1;Definir problema, meta ou demanda de planejamento.
+PLANEJAMENTO;2;Levantar dados da rede, escolas, matrículas, transporte ou programas.
+PLANEJAMENTO;3;Organizar diagnóstico e proposta de ação.
+PLANEJAMENTO;4;Elaborar plano, cronograma ou relatório.
+PLANEJAMENTO;5;Validar com André e encaminhar ao setor responsável.
+DOCUMENTO_TECNICO;1;Identificar tipo de documento: ofício, declaração, despacho, justificativa ou memorando.
+DOCUMENTO_TECNICO;2;Confirmar dados obrigatórios: nomes, datas, assunto, destinatário e fundamento.
+DOCUMENTO_TECNICO;3;Redigir minuta no padrão institucional.
+DOCUMENTO_TECNICO;4;Enviar para revisão/assinatura.
+DOCUMENTO_TECNICO;5;Gerar PDF, enviar e arquivar versão final.
