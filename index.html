@@ -327,7 +327,7 @@ const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBh
     </div>
     <input type="hidden" id="processId">
     <div class="form-grid">
-      <label class="field"><span>Nº interno</span><input id="numero" placeholder="DPC-001/2026"></label>
+      <label class="field"><span>Nº interno automático</span><div style="display:flex;gap:8px"><input id="numero" placeholder="Será gerado automaticamente" readonly><button class="btn ghost" type="button" id="generateNumberBtn" title="Gerar novo número">Gerar</button></div></label>
       <label class="field"><span>Data de entrada</span><input id="dataEntrada" type="date" required></label>
       <label class="field"><span>Tipo de processo</span><select id="tipo" required></select></label>
       <label class="field"><span>Prioridade</span><select id="prioridade" required></select></label>
@@ -547,6 +547,34 @@ const norm = v => (v||'').toString().toLowerCase().normalize('NFD').replace(/[\u
 const uid = () => crypto.randomUUID ? crypto.randomUUID() : String(Date.now()+Math.random());
 const escapeHtml = s => (s||'').toString().replace(/[&<>"']/g,m=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#039;'}[m]));
 
+function localNextProcessNumber(){
+  const year = new Date().getFullYear();
+  let max = 0;
+  state.processos.forEach(p=>{
+    const m = String(p.numero_interno||'').match(new RegExp('^DPC-(\\d{3,})/'+year+'$'));
+    if(m) max = Math.max(max, parseInt(m[1],10)||0);
+  });
+  return `DPC-${String(max+1).padStart(3,'0')}/${year}`;
+}
+async function getNextProcessNumber(){
+  if(configured){
+    try{
+      const {data,error} = await client.rpc('generate_process_number',{p_prefix:'DPC'});
+      if(!error && data) return data;
+      console.warn('Função generate_process_number indisponível; usando fallback local.', error);
+    }catch(err){ console.warn('Fallback de numeração local:', err); }
+  }
+  return localNextProcessNumber();
+}
+async function fillAutoNumber(force=false){
+  const input=$('numero'); if(!input) return;
+  const editing=!!($('processId')&&$('processId').value);
+  if(editing && !force) return;
+  if(input.value && !force) return;
+  input.value='Gerando...';
+  input.value=await getNextProcessNumber();
+}
+
 function seedLocal(){
   const saved = localStorage.getItem('planeja_local');
   if(saved){state = {...state,...JSON.parse(saved)}; return;}
@@ -589,6 +617,7 @@ function bind(){
   $('closeDialog').addEventListener('click',()=>$('dialog').close());
   $('cancelDialog').addEventListener('click',()=>$('dialog').close());
   $('processForm').addEventListener('submit',saveProcess);
+  $('generateNumberBtn').addEventListener('click',()=>fillAutoNumber(true));
   $('tipo').addEventListener('change',()=>renderChecklistPicker());
   $('selectAllChecklist').addEventListener('click',()=>document.querySelectorAll('.checkTemplate').forEach(x=>x.checked=true));
   $('clearChecklist').addEventListener('click',()=>document.querySelectorAll('.checkTemplate').forEach(x=>x.checked=false));
@@ -759,17 +788,21 @@ function selectedChecklistTemplates(){
   const checks=[...document.querySelectorAll('.checkTemplate')];
   return arr.filter((t,i)=>checks[i] && checks[i].checked);
 }
-function openDialog(p=null){
+async function openDialog(p=null){
   $('processForm').reset(); $('processId').value=''; $('dataEntrada').value=today(); $('status').value='Novo'; $('prioridade').value='Média'; $('formMsg').textContent='';
   $('dialogTitle').textContent=p?'Editar processo':'Novo processo';
   if(p){$('processId').value=p.id;$('numero').value=p.numero_interno||'';$('dataEntrada').value=p.data_entrada||today();$('tipo').value=p.tipo;$('prioridade').value=p.prioridade||'Média';$('status').value=p.status||'Novo';$('responsavel').value=p.responsavel||'';$('origem').value=p.origem||'';$('prazoOficial').value=p.prazo_oficial||'';$('prazoInterno').value=p.prazo_interno||'';$('setor').value=p.setor_envolvido||'';$('assunto').value=p.assunto||'';$('descricao').value=p.descricao||'';$('linkDrive').value=p.link_drive||'';}
   renderChecklistPicker(p);
   $('dialog').showModal();
+  if(!p) await fillAutoNumber(false);
 }
 async function saveProcess(e){
   e.preventDefault();
   const id=$('processId').value;
-  const obj={numero_interno:$('numero').value.trim(),data_entrada:$('dataEntrada').value,tipo:$('tipo').value,origem:$('origem').value.trim(),assunto:$('assunto').value.trim(),descricao:$('descricao').value.trim(),prioridade:$('prioridade').value,prazo_oficial:$('prazoOficial').value||null,prazo_interno:$('prazoInterno').value||null,responsavel:$('responsavel').value.trim(),setor_envolvido:$('setor').value.trim(),status:$('status').value,link_drive:$('linkDrive').value.trim()};
+  let numero = $('numero').value.trim();
+  if(!id && (!numero || numero==='Gerando...')) numero = await getNextProcessNumber();
+  const obj={numero_interno:numero,data_entrada:$('dataEntrada').value,tipo:$('tipo').value,origem:$('origem').value.trim(),assunto:$('assunto').value.trim(),descricao:$('descricao').value.trim(),prioridade:$('prioridade').value,prazo_oficial:$('prazoOficial').value||null,prazo_interno:$('prazoInterno').value||null,responsavel:$('responsavel').value.trim(),setor_envolvido:$('setor').value.trim(),status:$('status').value,link_drive:$('linkDrive').value.trim()};
+  $('numero').value=numero;
   $('formMsg').textContent='Salvando...';
   if(configured){
     if(id){const {error}=await client.from('processes').update(obj).eq('id',id); if(error){$('formMsg').textContent=error.message;return;}}
