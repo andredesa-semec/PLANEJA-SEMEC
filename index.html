@@ -93,7 +93,7 @@
     .badge.red{background:#fff1f1;color:#b42318;border-color:#ffd0d0}.badge.gold{background:#fff7df;color:#875700;border-color:#ffe29b}.badge.green{background:#e9f8ef;color:#12603c;border-color:#bce9ce}.badge.blue{background:#edf5ff;color:#174f91;border-color:#cfe3ff}.badge.purple{background:#f4f0ff;color:#5636a3;border-color:#dfd5ff}.badge.orange{background:#fff2e8;color:#a64a0a;border-color:#ffd3b3}
     .bar-row{display:grid;grid-template-columns:150px 1fr 38px;align-items:center;gap:10px;font-size:13px;font-weight:800;color:#38506a}
     .bar{height:10px;background:#edf2f7;border-radius:999px;overflow:hidden}.bar i{display:block;height:100%;border-radius:999px;background:linear-gradient(90deg,var(--brand2),var(--gold))}
-    .toolbar{display:grid;grid-template-columns:1.3fr .75fr .75fr .75fr;gap:12px;margin-bottom:14px}.toolbar .btn{padding:11px 14px}
+    .toolbar{display:grid;grid-template-columns:1.3fr .75fr .75fr .75fr;gap:12px;margin-bottom:14px}.toolbar .btn{padding:11px 14px}.task-toolbar{grid-template-columns:1.2fr .8fr .8fr .6fr;margin-bottom:12px}.task-process-list{max-height:260px;overflow:auto;padding-right:4px}.task-process-list .item{cursor:pointer}.task-process-list .item.active{border-color:var(--brand2);box-shadow:0 0 0 4px rgba(15,139,141,.10);background:#f0fbfa}.task-closed{background:#fff8e6;border:1px solid #ffe0a3;color:#795000;border-radius:16px;padding:12px 14px;font-size:13px;font-weight:800;line-height:1.45;margin-bottom:12px}
     .table-wrap{background:#fff;border-radius:var(--radius);box-shadow:0 10px 28px rgba(14,33,58,.07);border:1px solid rgba(217,226,238,.8);overflow:auto}
     table{width:100%;border-collapse:separate;border-spacing:0;min-width:920px}
     thead th{background:#f7fafc;color:#51677f;text-transform:uppercase;letter-spacing:.04em;font-size:12px;text-align:left;padding:14px;border-bottom:1px solid var(--line)}
@@ -223,7 +223,18 @@ const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBh
     </section>
 
     <section id="tarefasView" class="view hidden">
-      <div id="emptyDetail" class="empty"><strong>Nenhum processo selecionado</strong>Abra um processo na Central de Processos para acompanhar checklist, notas e documentos.</div>
+      <section class="panel" style="margin-bottom:16px">
+        <h3>Processos em andamento</h3>
+        <p class="muted" style="margin-top:-6px">Aqui aparecem somente processos ativos. Quando o processo é finalizado ou arquivado, ele sai desta tela e vai para o Arquivo Final.</p>
+        <div class="toolbar task-toolbar">
+          <input id="taskSearch" type="search" placeholder="Pesquisar processo para abrir as tarefas...">
+          <select id="taskTipo"><option value="">Todos os tipos</option></select>
+          <select id="taskStatus"><option value="">Todos os status ativos</option></select>
+          <button id="clearTaskFilters" class="btn ghost">Limpar</button>
+        </div>
+        <div id="taskProcessList" class="list task-process-list"></div>
+      </section>
+      <div id="emptyDetail" class="empty"><strong>Nenhum processo selecionado</strong>Escolha um processo em andamento acima ou abra pela Central de Processos para acompanhar checklist, notas e documentos.</div>
       <div id="detailArea" class="detail hidden">
         <section class="process-card">
           <span class="badge gold" id="detailTipo">Tipo</span>
@@ -452,11 +463,15 @@ function fillSelects(){
     $('tipo').insertAdjacentHTML('beforeend',`<option value="${v}">${e} ${l}</option>`);
     $('filterTipo').insertAdjacentHTML('beforeend',`<option value="${v}">${e} ${l}</option>`);
     $('archiveTipo').insertAdjacentHTML('beforeend',`<option value="${v}">${e} ${l}</option>`);
+    $('taskTipo').insertAdjacentHTML('beforeend',`<option value="${v}">${e} ${l}</option>`);
   });
   PRIOR.forEach(v=>$('prioridade').insertAdjacentHTML('beforeend',`<option>${v}</option>`));
   STATUS.forEach(v=>{
     $('status').insertAdjacentHTML('beforeend',`<option>${v}</option>`);
-    $('filterStatus').insertAdjacentHTML('beforeend',`<option>${v}</option>`);
+    if(!FINAL.includes(v)){
+      $('filterStatus').insertAdjacentHTML('beforeend',`<option>${v}</option>`);
+      $('taskStatus').insertAdjacentHTML('beforeend',`<option>${v}</option>`);
+    }
   });
 }
 function bind(){
@@ -475,6 +490,10 @@ function bind(){
   $('archiveTipo').addEventListener('change',renderArchive);
   $('archiveStatus').addEventListener('change',renderArchive);
   $('clearArchiveFilters').addEventListener('click',()=>{$('archiveSearch').value='';$('archiveTipo').value='';$('archiveStatus').value='';renderArchive();});
+  $('taskSearch').addEventListener('input',renderTaskProcessList);
+  $('taskTipo').addEventListener('change',renderTaskProcessList);
+  $('taskStatus').addEventListener('change',renderTaskProcessList);
+  $('clearTaskFilters').addEventListener('click',()=>{$('taskSearch').value='';$('taskTipo').value='';$('taskStatus').value='';renderTaskProcessList();});
   $('refreshBtn').addEventListener('click',loadAll);
   $('exportBtn').addEventListener('click',exportCSV);
   $('editBtn').addEventListener('click',()=>openDialog(state.selected));
@@ -514,13 +533,17 @@ async function loadAll(){
   state.processos=p.data||[]; state.tasks=t.data||[]; state.notes=n.data||[]; state.templates=(templ.data&&templ.data.length)?templ.data:DEFAULT_TEMPLATES.map(([process_type,title,sort_order])=>({id:uid(),process_type,title,sort_order,required:true}));
   renderAll();
 }
-function renderAll(){renderDashboard();renderTable();renderKanban();renderArchive();renderTemplates();if(state.selected) selectProcess(state.selected.id,false);}
+function renderAll(){renderDashboard();renderTable();renderKanban();renderArchive();renderTemplates();renderTaskProcessList();if(state.selected&&isOpen(state.selected)) selectProcess(state.selected.id,false); else if(state.selected&&isFinalized(state.selected)) clearTaskDetail();}
 function switchView(v){
   document.querySelectorAll('.nav button').forEach(b=>b.classList.toggle('active',b.dataset.view===v));
   document.querySelectorAll('.view').forEach(x=>x.classList.add('hidden'));
   $(v+'View').classList.remove('hidden');
-  const map={dashboard:['Dashboard','Visão geral dos processos, prazos críticos e pendências do departamento.'],processos:['Central de Processos','Controle de tudo que chega ao departamento, com responsável, prazo, status e checklist.'],tarefas:['Tarefas do Processo','Checklist automático, histórico e andamento do processo selecionado.'],kanban:['Quadro Visual','Visão por etapas para acompanhar gargalos e prioridades.'],arquivo:['Arquivo Final','Processos encerrados, conclusão registrada, protocolo e local de arquivamento.'],modelos:['Modelos Prontos','Fluxos automáticos por tipo de processo.']};
+  const map={dashboard:['Dashboard','Visão geral dos processos, prazos críticos e pendências do departamento.'],processos:['Central de Processos','Somente processos ativos. Finalizados e arquivados ficam no Arquivo Final.'],tarefas:['Tarefas do Processo','Escolha qualquer processo ativo para acompanhar checklist, histórico e andamento.'],kanban:['Quadro Visual','Visão por etapas dos processos ainda em andamento.'],arquivo:['Arquivo Final','Processos encerrados, conclusão registrada, protocolo e local de arquivamento.'],modelos:['Modelos Prontos','Fluxos automáticos por tipo de processo.']};
   $('pageTitle').textContent=map[v][0]; $('pageSubtitle').textContent=map[v][1];
+  if(v==='tarefas'){
+    renderTaskProcessList();
+    if(state.selected&&isFinalized(state.selected)) clearTaskDetail();
+  }
 }
 function isFinalized(p){return FINAL.includes(p.status) || !!p.data_finalizacao}
 function isOpen(p){return !isFinalized(p)}
@@ -540,24 +563,43 @@ function renderDashboard(){
   $('statFinished').textContent=state.processos.filter(isFinalized).length;
   const critical=open.filter(p=>due(p)).sort((a,b)=>daysTo(due(a))-daysTo(due(b))).slice(0,7);
   $('criticalList').innerHTML = critical.length?critical.map(itemHtml).join(''):'<div class="empty"><strong>Sem prazos críticos</strong>Nenhuma pendência com prazo próximo cadastrada.</div>';
-  const max=Math.max(1,...TYPES.map(([v])=>state.processos.filter(p=>p.tipo===v).length));
-  $('typeBars').innerHTML=TYPES.map(([v,l,e])=>{const n=state.processos.filter(p=>p.tipo===v).length; return `<div class="bar-row"><span>${e} ${l}</span><div class="bar"><i style="width:${(n/max)*100}%"></i></div><strong>${n}</strong></div>`}).join('');
+  const max=Math.max(1,...TYPES.map(([v])=>open.filter(p=>p.tipo===v).length));
+  $('typeBars').innerHTML=TYPES.map(([v,l,e])=>{const n=open.filter(p=>p.tipo===v).length; return `<div class="bar-row"><span>${e} ${l}</span><div class="bar"><i style="width:${(n/max)*100}%"></i></div><strong>${n}</strong></div>`}).join('');
   $('andreList').innerHTML=listFor(p=>p.status==='Aguardando revisão do André'||norm(p.responsavel).includes('andre'));
   $('mpList').innerHTML=listFor(p=>p.tipo==='MP_ORGAOS_CONTROLE');
   $('captacaoList').innerHTML=listFor(p=>p.tipo==='CAPTACAO_RECURSOS');
 }
 function listFor(fn){const arr=state.processos.filter(p=>isOpen(p)&&fn(p)).slice(0,4); return arr.length?arr.map(itemHtml).join(''):'<span class="muted small">Nada aberto neste grupo.</span>';}
 function itemHtml(p){const d=daysTo(due(p)); const label=d<0?`${Math.abs(d)} dia(s) atrasado`:d===0?'vence hoje':d<9999?`vence em ${d} dia(s)`:'sem prazo'; return `<div class="item"><div class="item-main"><strong>${icon(p.tipo)} ${escapeHtml(p.assunto)}</strong><small>${escapeHtml(p.numero_interno||'-')} • ${escapeHtml(p.responsavel||'sem responsável')} • ${label}</small></div>${priorityBadge(p.prioridade||'Média')}</div>`;}
-function filtered(){const q=norm($('search')?.value||'');const tipo=$('filterTipo')?.value||'';const st=$('filterStatus')?.value||''; return state.processos.filter(p=>(!tipo||p.tipo===tipo)&&(!st||p.status===st)&&(!q||norm([p.numero_interno,p.assunto,p.origem,p.responsavel,p.setor_envolvido,p.descricao].join(' ')).includes(q)));}
+function filtered(){const q=norm($('search')?.value||'');const tipo=$('filterTipo')?.value||'';const st=$('filterStatus')?.value||''; return state.processos.filter(p=>isOpen(p)&&(!tipo||p.tipo===tipo)&&(!st||p.status===st)&&(!q||norm([p.numero_interno,p.assunto,p.origem,p.responsavel,p.setor_envolvido,p.descricao].join(' ')).includes(q)));}
 function renderTable(){
   const rows=filtered();
-  $('tableBody').innerHTML=rows.length?rows.map(p=>{const prog=taskProgress(p.id);return `<tr><td><strong>${escapeHtml(p.numero_interno||'-')}</strong></td><td>${icon(p.tipo)} ${typeLabel(p.tipo)}</td><td class="subject"><strong>${escapeHtml(p.assunto)}</strong><small>${escapeHtml(p.origem||'')} ${p.setor_envolvido?'• '+escapeHtml(p.setor_envolvido):''}</small></td><td>${escapeHtml(p.responsavel||'-')}</td><td>${fmt(due(p))}</td><td>${statusBadge(p.status)}</td><td><div class="progress"><div class="line"><i style="width:${prog.pct}%"></i></div><small>${prog.done}/${prog.total} tarefas</small></div></td><td><button class="btn ghost" onclick="selectProcess('${p.id}')">Abrir</button></td></tr>`}).join(''):'<tr><td colspan="8" class="muted">Nenhum processo encontrado.</td></tr>';
+  $('tableBody').innerHTML=rows.length?rows.map(p=>{const prog=taskProgress(p.id);return `<tr><td><strong>${escapeHtml(p.numero_interno||'-')}</strong></td><td>${icon(p.tipo)} ${typeLabel(p.tipo)}</td><td class="subject"><strong>${escapeHtml(p.assunto)}</strong><small>${escapeHtml(p.origem||'')} ${p.setor_envolvido?'• '+escapeHtml(p.setor_envolvido):''}</small></td><td>${escapeHtml(p.responsavel||'-')}</td><td>${fmt(due(p))}</td><td>${statusBadge(p.status)}</td><td><div class="progress"><div class="line"><i style="width:${prog.pct}%"></i></div><small>${prog.done}/${prog.total} tarefas</small></div></td><td><button class="btn ghost" onclick="selectProcess('${p.id}')">Abrir</button></td></tr>`}).join(''):'<tr><td colspan="8" class="muted">Nenhum processo ativo encontrado. Os finalizados aparecem somente no Arquivo Final.</td></tr>';
 }
 function renderKanban(){
-  const cols=['Novo','Em elaboração','Aguardando informações','Aguardando revisão do André','Aguardando assinatura','Enviado/Protocolado','Concluído','Arquivado'];
-  $('kanban').innerHTML=cols.map(c=>{const arr=state.processos.filter(p=>p.status===c);return `<section class="col"><h3>${c}<span class="badge">${arr.length}</span></h3>${arr.map(p=>`<div class="card-mini"><strong>${icon(p.tipo)} ${escapeHtml(p.assunto)}</strong><small>${escapeHtml(p.numero_interno||'-')} • ${escapeHtml(p.responsavel||'sem responsável')}<br>Prazo: ${fmt(due(p))}</small><div class="row">${priorityBadge(p.prioridade||'Média')}<button class="btn ghost" onclick="selectProcess('${p.id}')">Abrir</button></div></div>`).join('')||'<span class="muted small">Sem processos.</span>'}</section>`}).join('');
+  const cols=['Novo','Classificado','Em elaboração','Aguardando informações','Aguardando revisão do André','Aguardando assinatura','Suspenso'];
+  $('kanban').innerHTML=cols.map(c=>{const arr=state.processos.filter(p=>isOpen(p)&&p.status===c);return `<section class="col"><h3>${c}<span class="badge">${arr.length}</span></h3>${arr.map(p=>`<div class="card-mini"><strong>${icon(p.tipo)} ${escapeHtml(p.assunto)}</strong><small>${escapeHtml(p.numero_interno||'-')} • ${escapeHtml(p.responsavel||'sem responsável')}<br>Prazo: ${fmt(due(p))}</small><div class="row">${priorityBadge(p.prioridade||'Média')}<button class="btn ghost" onclick="selectProcess('${p.id}')">Abrir</button></div></div>`).join('')||'<span class="muted small">Sem processos.</span>'}</section>`}).join('');
 }
 
+function filteredTaskProcesses(){
+  const q=norm($('taskSearch')?.value||''); const tipo=$('taskTipo')?.value||''; const st=$('taskStatus')?.value||'';
+  return state.processos.filter(p=>isOpen(p)&&(!tipo||p.tipo===tipo)&&(!st||p.status===st)&&(!q||norm([p.numero_interno,p.assunto,p.origem,p.responsavel,p.setor_envolvido,p.descricao].join(' ')).includes(q)))
+    .sort((a,b)=>daysTo(due(a))-daysTo(due(b)));
+}
+function renderTaskProcessList(){
+  const box=$('taskProcessList'); if(!box) return;
+  const rows=filteredTaskProcesses();
+  box.innerHTML=rows.length?rows.map(p=>{const prog=taskProgress(p.id); const active=state.selected&&state.selected.id===p.id?' active':''; const d=daysTo(due(p)); const label=d<0?`${Math.abs(d)} dia(s) atrasado`:d===0?'vence hoje':d<9999?`vence em ${d} dia(s)`:'sem prazo'; return `<div class="item${active}" onclick="selectProcess('${p.id}',false)"><div class="item-main"><strong>${icon(p.tipo)} ${escapeHtml(p.assunto)}</strong><small>${escapeHtml(p.numero_interno||'-')} • ${escapeHtml(p.responsavel||'sem responsável')} • ${statusBadge(p.status||'Novo')} • ${label}</small></div><div class="progress" style="min-width:120px"><div class="line"><i style="width:${prog.pct}%"></i></div><small>${prog.done}/${prog.total}</small></div></div>`}).join(''):'<div class="task-closed">Nenhum processo ativo nas tarefas. Processos finalizados ou arquivados ficam somente no Arquivo Final.</div>';
+}
+function clearTaskDetail(){
+  state.selected=null;
+  $('detailArea').classList.add('hidden');
+  $('emptyDetail').classList.remove('hidden');
+  renderTaskProcessList();
+}
+window.editArchive = function(id){
+  const p=state.processos.find(x=>x.id===id); if(p) openFinishDialog(p);
+}
 function filteredArchive(){
   const q=norm($('archiveSearch')?.value||''); const tipo=$('archiveTipo')?.value||''; const st=$('archiveStatus')?.value||'';
   return state.processos.filter(p=>isFinalized(p)&&(!tipo||p.tipo===tipo)&&(!st||p.status===st)&&(!q||norm([p.numero_interno,p.assunto,p.origem,p.responsavel,p.setor_envolvido,p.descricao,p.conclusao,p.local_arquivo,p.protocolo,p.observacoes_finalizacao].join(' ')).includes(q)));
@@ -571,7 +613,7 @@ function renderArchive(){
   $('archNoLink').textContent=all.filter(p=>!(p.link_arquivo_final||p.link_drive)).length;
   $('archMonth').textContent=all.filter(p=>(p.data_finalizacao||'').slice(0,7)===month).length;
   $('archConclusion').textContent=all.filter(p=>p.conclusao).length;
-  $('archiveBody').innerHTML=rows.length?rows.map(p=>`<tr><td><strong>${escapeHtml(p.numero_interno||'-')}</strong></td><td>${icon(p.tipo)} ${typeLabel(p.tipo)}</td><td class="subject"><strong>${escapeHtml(p.assunto)}</strong><small>${escapeHtml(p.origem||'')} ${p.responsavel?'• '+escapeHtml(p.responsavel):''}</small></td><td>${statusBadge(p.status||'-')}<br><span class="small muted">${fmt(p.data_finalizacao)}</span></td><td class="subject"><small>${escapeHtml(p.conclusao||'Sem conclusão registrada.')}</small></td><td class="subject"><strong>${escapeHtml(p.local_arquivo||'Sem local informado')}</strong><small>${escapeHtml(p.protocolo||'Sem protocolo')}</small></td><td><button class="btn ghost" onclick="selectProcess('${p.id}')">Abrir</button></td></tr>`).join(''):'<tr><td colspan="7" class="muted">Nenhum processo finalizado encontrado.</td></tr>';
+  $('archiveBody').innerHTML=rows.length?rows.map(p=>`<tr><td><strong>${escapeHtml(p.numero_interno||'-')}</strong></td><td>${icon(p.tipo)} ${typeLabel(p.tipo)}</td><td class="subject"><strong>${escapeHtml(p.assunto)}</strong><small>${escapeHtml(p.origem||'')} ${p.responsavel?'• '+escapeHtml(p.responsavel):''}</small></td><td>${statusBadge(p.status||'-')}<br><span class="small muted">${fmt(p.data_finalizacao)}</span></td><td class="subject"><small>${escapeHtml(p.conclusao||'Sem conclusão registrada.')}</small></td><td class="subject"><strong>${escapeHtml(p.local_arquivo||'Sem local informado')}</strong><small>${escapeHtml(p.protocolo||'Sem protocolo')}</small></td><td><button class="btn ghost" onclick="editArchive('${p.id}')">Finalização</button></td></tr>`).join(''):'<tr><td colspan="7" class="muted">Nenhum processo finalizado encontrado.</td></tr>';
 }
 
 function renderTemplates(){
@@ -627,11 +669,11 @@ async function finishProcess(e){
   if(configured){
     const {error}=await client.from('processes').update(obj).eq('id',id); if(error){$('finishMsg').textContent=error.message;return;}
     await client.from('process_notes').insert({process_id:id,note:nota});
-    $('finishDialog').close(); await loadAll(); return;
+    $('finishDialog').close(); state.selected=null; await loadAll(); switchView('arquivo'); return;
   }
   const ix=state.processos.findIndex(p=>p.id===id); if(ix>=0) state.processos[ix]={...state.processos[ix],...obj};
   state.notes.unshift({id:uid(),process_id:id,note:nota,created_at:new Date().toISOString()});
-  saveLocal(); $('finishDialog').close(); renderAll(); selectProcess(id,false);
+  saveLocal(); $('finishDialog').close(); state.selected=null; renderAll(); switchView('arquivo');
 }
 
 async function createDbTasks(p){
@@ -641,13 +683,16 @@ async function createDbTasks(p){
   if(rows.length) await client.from('process_tasks').insert(rows);
 }
 window.selectProcess = async function(id,go=true){
-  state.selected=state.processos.find(p=>p.id===id); if(!state.selected)return;
+  const pFound=state.processos.find(p=>p.id===id); if(!pFound)return;
+  if(isFinalized(pFound)){ state.selected=null; if(go) switchView('arquivo'); openFinishDialog(pFound); return; }
+  state.selected=pFound;
   if(go) switchView('tarefas');
   $('emptyDetail').classList.add('hidden'); $('detailArea').classList.remove('hidden');
   const p=state.selected; $('detailTipo').textContent=`${icon(p.tipo)} ${typeLabel(p.tipo)}`; $('detailTitle').textContent=`${p.numero_interno||'Sem número'} • ${p.assunto}`; $('detailDesc').textContent=p.descricao||'Sem descrição registrada.'; $('detailStatus').textContent=p.status||'-'; $('detailResp').textContent=p.responsavel||'-'; $('detailPrazo').textContent=fmt(due(p)); $('detailOrigem').textContent=p.origem||'-'; $('driveBtn').href=p.link_drive||p.link_arquivo_final||'#'; $('driveBtn').classList.toggle('hidden',!(p.link_drive||p.link_arquivo_final)); $('finishBtn').textContent=isFinalized(p)?'Editar finalização':'Finalizar / Arquivar';
   renderTasks(); renderNotes(); renderDetailSummary();
 }
 function renderTasks(){
+  if(!state.selected||isFinalized(state.selected)){ $('taskList').innerHTML='<div class="task-closed">Processo finalizado. O checklist não aparece mais aqui; consulte o Arquivo Final.</div>'; return; }
   const tasks=state.tasks.filter(t=>t.process_id===state.selected.id).sort((a,b)=>a.sort_order-b.sort_order);
   $('taskList').innerHTML=tasks.length?tasks.map(t=>`<label class="task ${t.done?'done':''}"><input type="checkbox" ${t.done?'checked':''} onchange="toggleTask('${t.id}',this.checked)"><div><strong>${escapeHtml(t.title)}</strong><small>${t.done?'Concluída':'Pendente'}</small></div></label>`).join(''):'<span class="muted">Sem checklist para este processo.</span>';
 }
