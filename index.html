@@ -377,7 +377,7 @@ const TYPES = [
 ];
 const STATUS = ['Novo','Classificado','Em elaboração','Aguardando informações','Aguardando revisão do André','Aguardando assinatura','Enviado/Protocolado','Concluído','Arquivado','Suspenso'];
 const PRIOR = ['Urgente','Alta','Média','Baixa'];
-const FINAL = ['Concluído','Arquivado'];
+const FINAL = ['Concluído','Concluido','Arquivado','Enviado/Protocolado','Finalizado','Finalizada','Encerrado','Encerrada'];
 const DEFAULT_TEMPLATES = [
   ['CAPTACAO_RECURSOS','Identificar fonte do recurso: SIMEC, PAR, FNDE, emenda, convênio ou programa.',1],
   ['CAPTACAO_RECURSOS','Levantar diagnóstico da necessidade: escola, quantidade, público atendido e justificativa.',2],
@@ -468,7 +468,7 @@ function fillSelects(){
   PRIOR.forEach(v=>$('prioridade').insertAdjacentHTML('beforeend',`<option>${v}</option>`));
   STATUS.forEach(v=>{
     $('status').insertAdjacentHTML('beforeend',`<option>${v}</option>`);
-    if(!FINAL.includes(v)){
+    if(!isFinalStatus(v)){
       $('filterStatus').insertAdjacentHTML('beforeend',`<option>${v}</option>`);
       $('taskStatus').insertAdjacentHTML('beforeend',`<option>${v}</option>`);
     }
@@ -545,7 +545,14 @@ function switchView(v){
     if(state.selected&&isFinalized(state.selected)) clearTaskDetail();
   }
 }
-function isFinalized(p){return FINAL.includes(p.status) || !!p.data_finalizacao}
+function isFinalStatus(status){
+  const s = norm(status || '');
+  return s === 'concluido' || s === 'arquivado' || s === 'finalizado' || s === 'finalizada' || s === 'encerrado' || s === 'encerrada' || s.includes('enviado') || s.includes('protocolado');
+}
+function isFinalized(p){
+  // Regra central: qualquer processo com data de finalização OU status final sai da Central e vai para o Arquivo Final.
+  return !!(p && (p.data_finalizacao || isFinalStatus(p.status)));
+}
 function isOpen(p){return !isFinalized(p)}
 function due(p){return p.prazo_interno || p.prazo_oficial || ''}
 function daysTo(d){ if(!d) return 9999; return Math.ceil((new Date(d+'T00:00:00') - new Date(today()+'T00:00:00'))/86400000);}
