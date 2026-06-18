@@ -106,6 +106,16 @@
     .note-form{display:grid;gap:10px;margin-bottom:14px}.note{align-items:flex-start}.note p{margin:0;line-height:1.45}.note small{margin-top:8px}
     .kanban{display:grid;grid-template-columns:repeat(5,minmax(230px,1fr));gap:14px;overflow:auto;padding-bottom:8px}.col{background:#f6f9fd;border:1px solid var(--line);border-radius:20px;padding:12px;min-height:360px}.col h3{font-size:14px;display:flex;align-items:center;justify-content:space-between;margin:0 0 12px}.card-mini{background:#fff;border:1px solid #e5edf6;border-radius:16px;padding:13px;margin-bottom:10px;box-shadow:0 8px 18px rgba(14,33,58,.05)}.card-mini strong{display:block;color:#162237;font-size:14px}.card-mini small{display:block;color:var(--muted);margin-top:7px;line-height:1.35}.card-mini .row{display:flex;align-items:center;justify-content:space-between;gap:8px;margin-top:10px}
     .templates{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:14px}.template{border:1px solid var(--line);border-radius:20px;padding:16px;background:#fbfdff}.template h3{display:flex;align-items:center;justify-content:space-between;gap:10px;margin-bottom:10px}.template ol{margin:0;padding-left:22px;color:#465e76;line-height:1.8;font-size:14px}
+
+    .checklist-picker{grid-column:1/-1;border:1px solid var(--line);border-radius:20px;background:#f8fbff;padding:16px;margin-top:4px}
+    .checklist-picker h4{margin:0 0 6px;font-size:16px;color:#17243a}
+    .checklist-picker p{margin:0 0 12px;color:var(--muted);font-size:13px;line-height:1.45}
+    .checklist-actions{display:flex;gap:10px;flex-wrap:wrap;margin-bottom:12px}
+    .checklist-options{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:9px;max-height:310px;overflow:auto;padding-right:4px}
+    .check-option{display:flex;gap:10px;align-items:flex-start;border:1px solid #dfe7f2;background:#fff;border-radius:14px;padding:10px;line-height:1.35;font-size:13px;font-weight:700;color:#304056}
+    .check-option input{width:18px;height:18px;margin-top:1px;accent-color:var(--brand2);flex:0 0 auto}
+    .edit-checklist-note{background:#fff7df;border:1px solid #ffe29b;color:#795000;border-radius:14px;padding:11px;font-size:13px;font-weight:800;line-height:1.45}
+    @media(max-width:820px){.checklist-options{grid-template-columns:1fr}}
     dialog{border:0;border-radius:26px;padding:0;box-shadow:0 30px 95px rgba(0,0,0,.36);width:min(920px,calc(100vw - 28px));max-height:92vh;overflow:auto}dialog::backdrop{background:rgba(4,10,19,.72);backdrop-filter:blur(6px)}.dialog-card{padding:24px;background:#fff}.dialog-head{display:flex;align-items:center;justify-content:space-between;gap:14px;margin-bottom:18px}.dialog-head h3{margin:0;font-size:23px}.x{border:0;background:#f0f5f8;border-radius:12px;width:40px;height:40px;font-size:24px;color:#51677f}.form-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:12px}.wide{grid-column:1/-1}.dialog-actions{display:flex;justify-content:flex-end;gap:10px;margin-top:14px;flex-wrap:wrap}
     .empty{background:#fff;border:1px dashed #b8c9da;border-radius:24px;padding:32px;text-align:center;color:#64748b}.empty strong{display:block;color:#26384d;font-size:20px;margin-bottom:8px}
     @media(max-width:1200px){.cards{grid-template-columns:repeat(3,1fr)}.grid2,.detail{grid-template-columns:1fr}.toolbar{grid-template-columns:1fr 1fr}.templates{grid-template-columns:1fr}.kanban{grid-template-columns:repeat(3,minmax(230px,1fr))}}
@@ -302,7 +312,7 @@ const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBh
     <section id="modelosView" class="view hidden">
       <div class="panel" style="margin-bottom:16px">
         <h3>Modelos de tarefas prontas</h3>
-        <p class="muted">Ao criar um processo, o sistema usa o tipo escolhido para abrir automaticamente o checklist correto.</p>
+        <p class="muted">Ao criar um processo, o sistema mostra a lista completa de checklist daquele tipo para você selecionar somente o que será necessário.</p>
       </div>
       <div class="templates" id="templatesBox"></div>
     </section>
@@ -330,6 +340,18 @@ const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBh
       <label class="field wide"><span>Assunto</span><input id="assunto" required placeholder="Resumo claro do processo"></label>
       <label class="field wide"><span>Descrição</span><textarea id="descricao" placeholder="Descreva a demanda, o que precisa ser produzido e qualquer detalhe importante"></textarea></label>
       <label class="field wide"><span>Link da pasta ou documento no Drive</span><input id="linkDrive" type="url" placeholder="https://drive.google.com/..."></label>
+      <div class="checklist-picker wide">
+        <h4>Checklist inicial do processo</h4>
+        <p>Selecione somente as tarefas que realmente serão necessárias neste processo. Depois de salvar, elas irão para a aba <strong>Checklist do Processo</strong>.</p>
+        <div id="checklistNewBox">
+          <div class="checklist-actions">
+            <button class="btn ghost" type="button" id="selectAllChecklist">Marcar todos</button>
+            <button class="btn ghost" type="button" id="clearChecklist">Limpar seleção</button>
+          </div>
+          <div id="checklistOptions" class="checklist-options"></div>
+        </div>
+        <div id="checklistEditBox" class="edit-checklist-note hidden">Este processo já foi criado. Para acompanhar ou concluir as tarefas, use a aba Checklist do Processo.</div>
+      </div>
     </div>
     <div class="dialog-actions">
       <button class="btn ghost" type="button" id="cancelDialog">Cancelar</button>
@@ -373,55 +395,139 @@ const TYPES = [
   ['PARECER_RELATORIO','Pareceres e Relatórios','📑'],
   ['SISTEMAS_OFICIAIS','Sistemas Oficiais','🖥️'],
   ['PLANEJAMENTO','Planejamento','🧭'],
-  ['DOCUMENTO_TECNICO','Documento Técnico','✍️']
+  ['DOCUMENTO_TECNICO','Documento Técnico','✍️'],
+  ['PRESTACAO_CONTAS','Prestação de Contas','🧾'],
+  ['LEMBRETE','Lembrete / Acompanhamento','⏰']
 ];
 const STATUS = ['Novo','Classificado','Em elaboração','Aguardando informações','Aguardando revisão do André','Aguardando assinatura','Enviado/Protocolado','Concluído','Arquivado','Suspenso'];
 const PRIOR = ['Urgente','Alta','Média','Baixa'];
 const FINAL = ['Concluído','Concluido','Arquivado','Enviado/Protocolado','Finalizado','Finalizada','Encerrado','Encerrada'];
 const DEFAULT_TEMPLATES = [
-  ['CAPTACAO_RECURSOS','Identificar fonte do recurso: SIMEC, PAR, FNDE, emenda, convênio ou programa.',1],
-  ['CAPTACAO_RECURSOS','Levantar diagnóstico da necessidade: escola, quantidade, público atendido e justificativa.',2],
-  ['CAPTACAO_RECURSOS','Separar documentos obrigatórios: ofício, fotos, dados da rede, cotações ou declarações.',3],
-  ['CAPTACAO_RECURSOS','Elaborar justificativa técnica para captação.',4],
-  ['CAPTACAO_RECURSOS','Enviar para revisão do André.',5],
-  ['CAPTACAO_RECURSOS','Protocolar/submeter no sistema ou encaminhar ao órgão responsável.',6],
-  ['CAPTACAO_RECURSOS','Arquivar comprovante de envio e registrar próximo acompanhamento.',7],
-  ['MP_ORGAOS_CONTROLE','Registrar ofício, recomendação, notificação ou requisição recebida.',1],
-  ['MP_ORGAOS_CONTROLE','Identificar prazo oficial de resposta e criar prazo interno anterior.',2],
-  ['MP_ORGAOS_CONTROLE','Levantar informações com setores envolvidos.',3],
-  ['MP_ORGAOS_CONTROLE','Separar documentos comprobatórios e evidências.',4],
-  ['MP_ORGAOS_CONTROLE','Elaborar relatório técnico, resposta ou manifestação.',5],
-  ['MP_ORGAOS_CONTROLE','Enviar para revisão do André.',6],
-  ['MP_ORGAOS_CONTROLE','Colher assinatura/autorização e protocolar resposta.',7],
-  ['MP_ORGAOS_CONTROLE','Arquivar resposta protocolada e comprovante.',8],
-  ['CONSELHOS','Identificar conselho: CME, CAE, CACS-FUNDEB ou outro.',1],
-  ['CONSELHOS','Registrar assunto, reunião, pauta ou solicitação.',2],
-  ['CONSELHOS','Separar atas, resoluções, pareceres ou documentos de apoio.',3],
-  ['CONSELHOS','Preparar minuta de parecer, ata, resolução ou relatório.',4],
-  ['CONSELHOS','Enviar para conferência e assinatura dos responsáveis.',5],
-  ['CONSELHOS','Arquivar versão final assinada.',6],
-  ['PARECER_RELATORIO','Definir objetivo do documento técnico.',1],
-  ['PARECER_RELATORIO','Coletar dados, legislação, documentos e evidências.',2],
-  ['PARECER_RELATORIO','Estruturar diagnóstico, análise e conclusão.',3],
-  ['PARECER_RELATORIO','Redigir parecer, relatório ou nota técnica.',4],
-  ['PARECER_RELATORIO','Enviar para revisão do André.',5],
-  ['PARECER_RELATORIO','Finalizar versão em PDF e arquivar.',6],
-  ['SISTEMAS_OFICIAIS','Identificar sistema: SIMEC, PAR, FNDE, INEP, PDDE, PNAE ou outro.',1],
-  ['SISTEMAS_OFICIAIS','Verificar pendência, diligência ou janela de preenchimento.',2],
-  ['SISTEMAS_OFICIAIS','Separar dados e documentos necessários.',3],
-  ['SISTEMAS_OFICIAIS','Realizar preenchimento/atualização no sistema.',4],
-  ['SISTEMAS_OFICIAIS','Salvar comprovante, protocolo ou print da tela.',5],
-  ['SISTEMAS_OFICIAIS','Registrar próximo prazo de acompanhamento.',6],
-  ['PLANEJAMENTO','Definir problema, meta ou demanda de planejamento.',1],
-  ['PLANEJAMENTO','Levantar dados da rede, escolas, matrículas, transporte ou programas.',2],
-  ['PLANEJAMENTO','Organizar diagnóstico e proposta de ação.',3],
-  ['PLANEJAMENTO','Elaborar plano, cronograma ou relatório.',4],
-  ['PLANEJAMENTO','Validar com André e encaminhar ao setor responsável.',5],
-  ['DOCUMENTO_TECNICO','Identificar tipo de documento: ofício, declaração, despacho, justificativa ou memorando.',1],
-  ['DOCUMENTO_TECNICO','Confirmar dados obrigatórios: nomes, datas, assunto, destinatário e fundamento.',2],
-  ['DOCUMENTO_TECNICO','Redigir minuta no padrão institucional.',3],
-  ['DOCUMENTO_TECNICO','Enviar para revisão/assinatura.',4],
-  ['DOCUMENTO_TECNICO','Gerar PDF, enviar e arquivar versão final.',5]
+  ['CAPTACAO_RECURSOS','Identificar a oportunidade de recurso: SIMEC, PAR, FNDE, emenda, convênio, edital ou programa.',1],
+  ['CAPTACAO_RECURSOS','Confirmar prazo de adesão, envio da proposta ou manifestação de interesse.',2],
+  ['CAPTACAO_RECURSOS','Verificar critérios de elegibilidade do município e da rede de ensino.',3],
+  ['CAPTACAO_RECURSOS','Levantar diagnóstico da necessidade: escola, localidade, quantidade, público atendido e problema existente.',4],
+  ['CAPTACAO_RECURSOS','Separar dados da rede: matrículas, INEP, endereço, etapa atendida, demanda reprimida e indicadores.',5],
+  ['CAPTACAO_RECURSOS','Reunir documentos obrigatórios: ofício, declaração, fotos, croqui, planilha, certidões ou relatórios.',6],
+  ['CAPTACAO_RECURSOS','Solicitar informações complementares a escola, transporte, engenharia, financeiro ou gabinete.',7],
+  ['CAPTACAO_RECURSOS','Elaborar justificativa técnica da necessidade do recurso.',8],
+  ['CAPTACAO_RECURSOS','Elaborar estimativa de valor, quantidade ou especificação técnica, quando necessário.',9],
+  ['CAPTACAO_RECURSOS','Conferir se há contrapartida, termo de compromisso, plano de trabalho ou documentação complementar.',10],
+  ['CAPTACAO_RECURSOS','Anexar documentos no sistema ou organizar pasta final de envio.',11],
+  ['CAPTACAO_RECURSOS','Enviar proposta, cadastro ou solicitação no sistema competente.',12],
+  ['CAPTACAO_RECURSOS','Salvar comprovante de envio, protocolo, print ou recibo.',13],
+  ['CAPTACAO_RECURSOS','Registrar próximo acompanhamento e responsável pelo monitoramento.',14],
+  ['CAPTACAO_RECURSOS','Finalizar processo com conclusão e arquivamento do comprovante.',15],
+  ['MP_ORGAOS_CONTROLE','Registrar ofício, recomendação, notificação, requisição ou despacho recebido.',1],
+  ['MP_ORGAOS_CONTROLE','Identificar órgão de origem: Ministério Público, Tribunal de Contas, Câmara, Defensoria ou outro.',2],
+  ['MP_ORGAOS_CONTROLE','Conferir número do documento, data de recebimento e prazo oficial de resposta.',3],
+  ['MP_ORGAOS_CONTROLE','Definir prazo interno anterior ao prazo oficial.',4],
+  ['MP_ORGAOS_CONTROLE','Criar pasta do processo e salvar documento recebido.',5],
+  ['MP_ORGAOS_CONTROLE','Identificar tema principal: transporte, matrícula, escola, servidor, obra, alimentação, conselho ou outro.',6],
+  ['MP_ORGAOS_CONTROLE','Solicitar informações ao setor responsável.',7],
+  ['MP_ORGAOS_CONTROLE','Solicitar documentos comprobatórios, fotos, relatórios, listas, rotas ou declarações.',8],
+  ['MP_ORGAOS_CONTROLE','Conferir se a resposta exige parecer jurídico, manifestação técnica ou despacho do secretário.',9],
+  ['MP_ORGAOS_CONTROLE','Organizar histórico dos fatos e providências já adotadas.',10],
+  ['MP_ORGAOS_CONTROLE','Elaborar relatório técnico, manifestação ou minuta de resposta.',11],
+  ['MP_ORGAOS_CONTROLE','Anexar evidências e documentos comprobatórios.',12],
+  ['MP_ORGAOS_CONTROLE','Enviar para revisão do André.',13],
+  ['MP_ORGAOS_CONTROLE','Ajustar texto após revisão.',14],
+  ['MP_ORGAOS_CONTROLE','Encaminhar para assinatura do secretário ou autoridade competente.',15],
+  ['MP_ORGAOS_CONTROLE','Protocolar resposta dentro do prazo.',16],
+  ['MP_ORGAOS_CONTROLE','Salvar comprovante de protocolo ou envio.',17],
+  ['MP_ORGAOS_CONTROLE','Registrar conclusão, local de arquivamento e eventual prazo de acompanhamento futuro.',18],
+  ['CONSELHOS','Identificar o conselho relacionado: CME, CAE, CACS-FUNDEB ou outro.',1],
+  ['CONSELHOS','Registrar assunto, pauta, reunião, solicitação ou processo vinculado.',2],
+  ['CONSELHOS','Conferir composição, mandato, portaria ou ato de nomeação, quando necessário.',3],
+  ['CONSELHOS','Criar pasta do conselho e salvar documentos recebidos.',4],
+  ['CONSELHOS','Separar documentos de apoio: atas, resoluções, pareceres, relatórios, prestações ou legislação.',5],
+  ['CONSELHOS','Preparar pauta ou roteiro da reunião, quando necessário.',6],
+  ['CONSELHOS','Preparar minuta de ata, parecer, resolução, recomendação ou relatório.',7],
+  ['CONSELHOS','Encaminhar material para conferência dos conselheiros ou presidência do conselho.',8],
+  ['CONSELHOS','Registrar deliberação, aprovação, ressalva ou encaminhamento.',9],
+  ['CONSELHOS','Coletar assinaturas necessárias.',10],
+  ['CONSELHOS','Digitalizar ou salvar documento final assinado.',11],
+  ['CONSELHOS','Enviar documento ao setor interessado, órgão de controle ou sistema oficial, se necessário.',12],
+  ['CONSELHOS','Arquivar versão final em pasta do conselho.',13],
+  ['CONSELHOS','Registrar conclusão no processo.',14],
+  ['PARECER_RELATORIO','Definir o tipo de documento: parecer, relatório, nota técnica, manifestação ou diagnóstico.',1],
+  ['PARECER_RELATORIO','Definir objetivo do documento e destinatário.',2],
+  ['PARECER_RELATORIO','Levantar legislação, normas, dados oficiais e documentos de referência.',3],
+  ['PARECER_RELATORIO','Solicitar informações aos setores envolvidos.',4],
+  ['PARECER_RELATORIO','Organizar evidências: fotos, planilhas, relatórios, declarações, atas ou documentos oficiais.',5],
+  ['PARECER_RELATORIO','Estruturar introdução, contextualização, análise técnica e conclusão.',6],
+  ['PARECER_RELATORIO','Redigir primeira versão do documento.',7],
+  ['PARECER_RELATORIO','Conferir coerência, linguagem institucional, datas, nomes e fundamentos.',8],
+  ['PARECER_RELATORIO','Enviar para revisão do André.',9],
+  ['PARECER_RELATORIO','Ajustar texto após revisão.',10],
+  ['PARECER_RELATORIO','Gerar versão final em PDF.',11],
+  ['PARECER_RELATORIO','Encaminhar para assinatura ou envio.',12],
+  ['PARECER_RELATORIO','Salvar documento editável e PDF final na pasta correta.',13],
+  ['PARECER_RELATORIO','Registrar conclusão e local de arquivo.',14],
+  ['SISTEMAS_OFICIAIS','Identificar sistema oficial: SIMEC, PAR, FNDE, INEP, PDDE, PNAE, PNATE, Educacenso ou outro.',1],
+  ['SISTEMAS_OFICIAIS','Identificar módulo, programa ou aba do sistema.',2],
+  ['SISTEMAS_OFICIAIS','Conferir pendência, diligência, prazo ou janela de preenchimento.',3],
+  ['SISTEMAS_OFICIAIS','Levantar login/responsável autorizado sem registrar senha no sistema.',4],
+  ['SISTEMAS_OFICIAIS','Separar dados obrigatórios e documentos exigidos.',5],
+  ['SISTEMAS_OFICIAIS','Solicitar informações aos setores ou escolas, quando necessário.',6],
+  ['SISTEMAS_OFICIAIS','Realizar preenchimento, atualização, resposta de diligência ou envio de proposta.',7],
+  ['SISTEMAS_OFICIAIS','Conferir campos obrigatórios antes do envio.',8],
+  ['SISTEMAS_OFICIAIS','Salvar comprovante, protocolo, recibo ou print da tela.',9],
+  ['SISTEMAS_OFICIAIS','Registrar status da plataforma após envio.',10],
+  ['SISTEMAS_OFICIAIS','Registrar próximo prazo de acompanhamento.',11],
+  ['SISTEMAS_OFICIAIS','Arquivar documentos e comprovantes vinculados ao processo.',12],
+  ['PLANEJAMENTO','Definir problema, meta, demanda ou objetivo de planejamento.',1],
+  ['PLANEJAMENTO','Levantar dados da rede: escolas, creches, matrículas, transporte, estrutura, servidores ou programas.',2],
+  ['PLANEJAMENTO','Consultar dados oficiais disponíveis: INEP, Censo Escolar, sistemas internos, relatórios ou planilhas.',3],
+  ['PLANEJAMENTO','Organizar diagnóstico da situação atual.',4],
+  ['PLANEJAMENTO','Identificar prioridade, impacto e público beneficiado.',5],
+  ['PLANEJAMENTO','Definir proposta de ação, estratégia ou encaminhamento.',6],
+  ['PLANEJAMENTO','Elaborar cronograma ou plano de trabalho.',7],
+  ['PLANEJAMENTO','Identificar setores envolvidos e responsabilidades.',8],
+  ['PLANEJAMENTO','Preparar documento técnico, relatório ou apresentação, se necessário.',9],
+  ['PLANEJAMENTO','Validar com André e/ou secretário.',10],
+  ['PLANEJAMENTO','Encaminhar ao setor responsável.',11],
+  ['PLANEJAMENTO','Registrar monitoramento ou próxima revisão.',12],
+  ['PLANEJAMENTO','Arquivar documento final e conclusão.',13],
+  ['DOCUMENTO_TECNICO','Identificar tipo de documento: ofício, memorando, declaração, despacho, justificativa, relatório ou resposta.',1],
+  ['DOCUMENTO_TECNICO','Confirmar destinatário, interessado, assunto e finalidade do documento.',2],
+  ['DOCUMENTO_TECNICO','Conferir dados obrigatórios: nomes, datas, escola, INEP, endereço, cargo e fundamento.',3],
+  ['DOCUMENTO_TECNICO','Localizar modelo padrão mais adequado.',4],
+  ['DOCUMENTO_TECNICO','Redigir minuta no padrão institucional.',5],
+  ['DOCUMENTO_TECNICO','Conferir ortografia, formatação, numeração e linguagem oficial.',6],
+  ['DOCUMENTO_TECNICO','Enviar para revisão do André, quando necessário.',7],
+  ['DOCUMENTO_TECNICO','Encaminhar para assinatura.',8],
+  ['DOCUMENTO_TECNICO','Gerar PDF ou versão final.',9],
+  ['DOCUMENTO_TECNICO','Enviar ao interessado, setor ou órgão competente.',10],
+  ['DOCUMENTO_TECNICO','Salvar versão editável e PDF final.',11],
+  ['DOCUMENTO_TECNICO','Registrar conclusão e local de arquivo.',12],
+  ['PRESTACAO_CONTAS','Identificar programa, convênio, termo, recurso ou período da prestação de contas.',1],
+  ['PRESTACAO_CONTAS','Conferir órgão ou sistema responsável pela prestação: FNDE, SIMEC, PDDE, PNAE, PNATE, convênio ou outro.',2],
+  ['PRESTACAO_CONTAS','Identificar prazo oficial de envio, análise ou complementação.',3],
+  ['PRESTACAO_CONTAS','Criar pasta específica da prestação de contas.',4],
+  ['PRESTACAO_CONTAS','Levantar extratos bancários, notas fiscais, recibos, contratos, empenhos, liquidações e pagamentos.',5],
+  ['PRESTACAO_CONTAS','Solicitar documentos faltantes ao financeiro, escola, conselho, setor de compras ou contabilidade.',6],
+  ['PRESTACAO_CONTAS','Conferir se os gastos correspondem ao objeto aprovado.',7],
+  ['PRESTACAO_CONTAS','Organizar planilha de despesas, receitas, saldos e comprovantes.',8],
+  ['PRESTACAO_CONTAS','Conferir atas, pareceres ou manifestações de conselho, quando exigido.',9],
+  ['PRESTACAO_CONTAS','Elaborar relatório ou justificativa de execução física e financeira.',10],
+  ['PRESTACAO_CONTAS','Lançar ou anexar documentos no sistema competente.',11],
+  ['PRESTACAO_CONTAS','Conferir pendências, inconsistências ou diligências antes do envio.',12],
+  ['PRESTACAO_CONTAS','Enviar prestação de contas ou resposta de diligência.',13],
+  ['PRESTACAO_CONTAS','Salvar recibo, protocolo, parecer ou comprovante de envio.',14],
+  ['PRESTACAO_CONTAS','Registrar necessidade de acompanhamento, complementação ou baixa final.',15],
+  ['PRESTACAO_CONTAS','Finalizar e arquivar a prestação de contas.',16],
+  ['LEMBRETE','Definir o assunto do lembrete ou acompanhamento.',1],
+  ['LEMBRETE','Definir data limite ou data de retorno.',2],
+  ['LEMBRETE','Definir responsável pelo acompanhamento.',3],
+  ['LEMBRETE','Registrar origem do lembrete: reunião, WhatsApp, ofício, sistema, escola ou secretário.',4],
+  ['LEMBRETE','Descrever claramente o que precisa ser lembrado ou cobrado.',5],
+  ['LEMBRETE','Vincular documento, pasta, processo ou link relacionado, se houver.',6],
+  ['LEMBRETE','Cobrar retorno do setor, escola, conselho ou órgão responsável.',7],
+  ['LEMBRETE','Registrar resposta recebida ou ausência de retorno.',8],
+  ['LEMBRETE','Definir novo prazo, se ainda depender de acompanhamento.',9],
+  ['LEMBRETE','Converter em processo técnico, se a demanda crescer ou exigir documento formal.',10],
+  ['LEMBRETE','Finalizar lembrete quando resolvido e registrar conclusão.',11]
 ];
 const DEMO = [
   {id:'demo1',numero_interno:'DPC-001/2026',data_entrada:'2026-06-17',tipo:'MP_ORGAOS_CONTROLE',origem:'Ministério Público',assunto:'Resposta técnica sobre transporte escolar rural',descricao:'Organizar relatório com rotas, alunos atendidos, veículos e providências adotadas.',prioridade:'Urgente',prazo_oficial:'2026-06-20',prazo_interno:'2026-06-19',responsavel:'André',setor_envolvido:'Transporte Escolar',status:'Aguardando revisão do André',link_drive:''},
@@ -452,9 +558,10 @@ function seedLocal(){
   saveLocal();
 }
 function saveLocal(){ if(!configured) localStorage.setItem('planeja_local',JSON.stringify({processos:state.processos,tasks:state.tasks,notes:state.notes,templates:state.templates})); }
-function createLocalTasks(p){
-  DEFAULT_TEMPLATES.filter(x=>x[0]===p.tipo).forEach(([process_type,title,sort_order])=>{
-    state.tasks.push({id:uid(),process_id:p.id,title,sort_order,required:true,done:false,created_at:new Date().toISOString()});
+function createLocalTasks(p, selectedTemplates=null){
+  const source = selectedTemplates || state.templates.filter(t=>t.process_type===p.tipo).sort((a,b)=>a.sort_order-b.sort_order);
+  source.forEach((t,idx)=>{
+    state.tasks.push({id:uid(),process_id:p.id,template_id:t.id||null,title:t.title,sort_order:t.sort_order||idx+1,required:t.required??true,done:false,created_at:new Date().toISOString()});
   });
 }
 
@@ -482,6 +589,9 @@ function bind(){
   $('closeDialog').addEventListener('click',()=>$('dialog').close());
   $('cancelDialog').addEventListener('click',()=>$('dialog').close());
   $('processForm').addEventListener('submit',saveProcess);
+  $('tipo').addEventListener('change',()=>renderChecklistPicker());
+  $('selectAllChecklist').addEventListener('click',()=>document.querySelectorAll('.checkTemplate').forEach(x=>x.checked=true));
+  $('clearChecklist').addEventListener('click',()=>document.querySelectorAll('.checkTemplate').forEach(x=>x.checked=false));
   $('search').addEventListener('input',renderTable);
   $('filterTipo').addEventListener('change',renderTable);
   $('filterStatus').addEventListener('change',renderTable);
@@ -627,10 +737,33 @@ function renderTemplates(){
   const grouped = TYPES.map(([v,l,e])=>({v,l,e,items:state.templates.filter(t=>t.process_type===v).sort((a,b)=>a.sort_order-b.sort_order)}));
   $('templatesBox').innerHTML=grouped.map(g=>`<section class="template"><h3>${g.e} ${g.l}<span class="badge">${g.items.length}</span></h3><ol>${g.items.map(i=>`<li>${escapeHtml(i.title)}</li>`).join('')}</ol></section>`).join('');
 }
+
+function templatesForType(tipo){
+  let arr=state.templates.filter(t=>t.process_type===tipo).sort((a,b)=>a.sort_order-b.sort_order);
+  if(!arr.length) arr=DEFAULT_TEMPLATES.filter(t=>t[0]===tipo).map(([process_type,title,sort_order])=>({id:uid(),process_type,title,sort_order,required:true}));
+  return arr;
+}
+function renderChecklistPicker(p=null){
+  const box=$('checklistOptions'); if(!box) return;
+  const editing=!!($('processId')&&$('processId').value);
+  $('checklistNewBox').classList.toggle('hidden',editing);
+  $('checklistEditBox').classList.toggle('hidden',!editing);
+  if(editing){box.innerHTML=''; return;}
+  const tipo=$('tipo').value;
+  const arr=templatesForType(tipo);
+  box.innerHTML=arr.length?arr.map((t,i)=>`<label class="check-option"><input class="checkTemplate" type="checkbox" value="${escapeHtml(t.id||'d'+i)}" checked><span>${escapeHtml(t.title)}</span></label>`).join(''):'<div class="edit-checklist-note">Nenhum modelo cadastrado para este tipo.</div>';
+}
+function selectedChecklistTemplates(){
+  const tipo=$('tipo').value;
+  const arr=templatesForType(tipo);
+  const checks=[...document.querySelectorAll('.checkTemplate')];
+  return arr.filter((t,i)=>checks[i] && checks[i].checked);
+}
 function openDialog(p=null){
   $('processForm').reset(); $('processId').value=''; $('dataEntrada').value=today(); $('status').value='Novo'; $('prioridade').value='Média'; $('formMsg').textContent='';
   $('dialogTitle').textContent=p?'Editar processo':'Novo processo';
   if(p){$('processId').value=p.id;$('numero').value=p.numero_interno||'';$('dataEntrada').value=p.data_entrada||today();$('tipo').value=p.tipo;$('prioridade').value=p.prioridade||'Média';$('status').value=p.status||'Novo';$('responsavel').value=p.responsavel||'';$('origem').value=p.origem||'';$('prazoOficial').value=p.prazo_oficial||'';$('prazoInterno').value=p.prazo_interno||'';$('setor').value=p.setor_envolvido||'';$('assunto').value=p.assunto||'';$('descricao').value=p.descricao||'';$('linkDrive').value=p.link_drive||'';}
+  renderChecklistPicker(p);
   $('dialog').showModal();
 }
 async function saveProcess(e){
@@ -640,11 +773,11 @@ async function saveProcess(e){
   $('formMsg').textContent='Salvando...';
   if(configured){
     if(id){const {error}=await client.from('processes').update(obj).eq('id',id); if(error){$('formMsg').textContent=error.message;return;}}
-    else{const {data,error}=await client.from('processes').insert(obj).select().single(); if(error){$('formMsg').textContent=error.message;return;} await createDbTasks(data);}
+    else{const selectedTemplates=selectedChecklistTemplates(); const {data,error}=await client.from('processes').insert(obj).select().single(); if(error){$('formMsg').textContent=error.message;return;} await createDbTasks(data, selectedTemplates);}
     $('dialog').close(); await loadAll(); return;
   }
   if(id){const ix=state.processos.findIndex(p=>p.id===id); state.processos[ix]={...state.processos[ix],...obj};}
-  else{const p={id:uid(),...obj,created_at:new Date().toISOString()}; state.processos.unshift(p); createLocalTasks(p);}
+  else{const p={id:uid(),...obj,created_at:new Date().toISOString()}; const selectedTemplates=selectedChecklistTemplates(); state.processos.unshift(p); createLocalTasks(p, selectedTemplates);}
   saveLocal(); $('dialog').close(); renderAll();
 }
 
@@ -683,10 +816,9 @@ async function finishProcess(e){
   saveLocal(); $('finishDialog').close(); state.selected=null; renderAll(); switchView('arquivo');
 }
 
-async function createDbTasks(p){
-  let templates=state.templates.filter(t=>t.process_type===p.tipo).sort((a,b)=>a.sort_order-b.sort_order);
-  if(!templates.length) templates=DEFAULT_TEMPLATES.filter(t=>t[0]===p.tipo).map(([process_type,title,sort_order])=>({process_type,title,sort_order,required:true}));
-  const rows=templates.map(t=>({process_id:p.id,template_id:t.id&&t.id.length>20?t.id:null,title:t.title,sort_order:t.sort_order,required:t.required??true}));
+async function createDbTasks(p, selectedTemplates=null){
+  let templates = selectedTemplates || templatesForType(p.tipo);
+  const rows=templates.map((t,idx)=>({process_id:p.id,template_id:t.id&&String(t.id).length>20?t.id:null,title:t.title,sort_order:t.sort_order||idx+1,required:t.required??true}));
   if(rows.length) await client.from('process_tasks').insert(rows);
 }
 window.selectProcess = async function(id,go=true){
