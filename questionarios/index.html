@@ -32,25 +32,17 @@ button{border:0;border-radius:9px;padding:10px 14px;cursor:pointer;background:va
 <p class="muted">Entre com seu e-mail e senha. Depois do login, o sistema abre diretamente as perguntas do seu setor.</p>
 <label>E-mail</label><input id="email" type="email" autocomplete="username">
 <label style="display:block;margin-top:10px">Senha</label><input id="password" type="password" autocomplete="current-password">
-<div class="row" style="margin-top:14px"><button id="loginBtn">Entrar</button><button class="secondary" id="signupBtn">Criar acesso</button></div>
+<div class="row" style="margin-top:14px"><button id="loginBtn">Entrar</button><button class="secondary" id="signupBtn">Primeiro acesso</button></div>
 <div id="authMsg" class="statusline"></div>
 </section>
 <section id="app" class="hidden">
 <div class="topbar"><div><h2 style="margin:0">Questionário</h2><div id="who" class="muted"></div></div><div class="row" style="flex:0 0 auto"><button class="secondary small" id="refreshBtn">Atualizar</button><button class="secondary small" id="logoutBtn">Sair</button></div></div>
-<div id="adminBox" class="card hidden">
-<div class="admin-grid" id="summary"></div>
-<h3>Cadastro de usuários e setores</h3>
-<p class="muted">Cadastre o e-mail uma única vez por módulo. Depois disso, a pessoa entra e vê somente as perguntas do setor cadastrado.</p>
-<div class="user-form">
-<div><label>E-mail</label><input id="uEmail" placeholder="email@xinguara.pa.gov.br"></div>
-<div><label>Nome</label><input id="uName" placeholder="Nome do responsável"></div>
-<div><label>Módulo</label><select id="uModule"><option value="educacao">Educação</option><option value="nutricao">Segurança Alimentar</option></select></div>
-<div><label>Setor</label><select id="uDept"></select></div>
-<button id="addUserBtn">Cadastrar</button>
-</div><div id="userMsg" class="statusline"></div>
+<div class="tabs hidden" id="adminNav"><button data-view="questions" class="active">Questionários</button><button data-view="users">Usuários e setores</button></div>
+<div id="adminPanel" class="hidden"></div>
+<div id="questionPanel">
+  <div class="tabs" id="moduleTabs"><button data-module="educacao" class="active">Educação</button><button data-module="nutricao">Segurança Alimentar e Nutricional</button></div>
+  <div id="content"></div>
 </div>
-<div class="tabs"><button data-module="educacao" class="active">Educação</button><button data-module="nutricao">Segurança Alimentar e Nutricional</button></div>
-<div id="content"></div>
 </section>
 </main>
 <script>
@@ -59,7 +51,7 @@ const SUPABASE_KEY='sb_publishable_1Ge6_2uh9-Ob8kZM_CBDOA_G0tCJyJc';
 const db=supabase.createClient(SUPABASE_URL,SUPABASE_KEY);
 const $=s=>document.querySelector(s);
 const esc=s=>String(s??'').replace(/[&<>"']/g,m=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#039;'}[m]));
-let session=null,isAdmin=false,currentModule='educacao',myAccess=[];
+let session=null,isAdmin=false,currentModule='educacao',currentView='questions',myAccess=[];
 const YN=['Sim','Não'];
 const DEPTS={
 educacao:['Todos','Gabinete / Planejamento','Diretoria de Ensino / Pedagógico','Formação Continuada','Educação Especial / AEE','Recursos Humanos / Carreira','Conselho Municipal de Educação - CME','CACS-FUNDEB','Alimentação Escolar / CAE','Transporte Escolar','Gestão Escolar','Financeiro / Contabilidade','Matrícula / Censo / Educação Infantil'],
@@ -183,8 +175,12 @@ async function boot(){
  const {data:admins}=await db.from('questionnaire_admins').select('email').ilike('email',email);isAdmin=!!admins?.length;
  const {data:access}=await db.from('questionnaire_access').select('*').ilike('email',email).eq('active',true);myAccess=access||[];
  $('#who').textContent=email+' - '+(isAdmin?'Administrador':(myAccess.map(x=>x.department).join(' | ')||'Aguardando liberação'));
- $('#authBox').classList.add('hidden');$('#app').classList.remove('hidden');$('#adminBox').classList.toggle('hidden',!isAdmin);
- updateDeptOptions();await render();
+ $('#authBox').classList.add('hidden');$('#app').classList.remove('hidden');
+ $('#adminNav').classList.toggle('hidden',!isAdmin);
+ const modules=[...new Set(myAccess.map(x=>x.module_code))];
+ if(!isAdmin && modules.length===1){currentModule=modules[0];$('#moduleTabs').classList.add('hidden')}else{$('#moduleTabs').classList.remove('hidden')}
+ document.querySelectorAll('#moduleTabs button').forEach(b=>b.classList.toggle('active',b.dataset.module===currentModule));
+ await render();
 }
 function updateDeptOptions(){
  const m=$('#uModule')?.value||'educacao';if(!$('#uDept'))return;
@@ -198,13 +194,15 @@ async function getRows(){
  return {rows:visible,answers};
 }
 async function render(){
+ $('#questionPanel').classList.toggle('hidden',isAdmin&&currentView==='users');
+ $('#adminPanel').classList.toggle('hidden',!(isAdmin&&currentView==='users'));
+ if(isAdmin&&currentView==='users'){await renderAdminPanel();return}
  $('#content').innerHTML='<div class="card">Carregando...</div>';
  try{
   const {rows,answers}=await getRows();
   const total=rows.length,done=answers.filter(x=>x.status==='Respondido').length,pct=total?Math.round(done*100/total):0;
-  if(isAdmin)$('#summary').innerHTML='<div class="metric"><span class="muted">Perguntas neste módulo</span><strong>'+total+'</strong></div><div class="metric"><span class="muted">Respondidas</span><strong>'+done+'</strong></div><div class="metric"><span class="muted">Progresso</span><strong>'+pct+'%</strong></div><div class="metric"><span class="muted">Módulo</span><strong style="font-size:17px">'+(currentModule==='educacao'?'Educação':'Segurança Alimentar')+'</strong></div>';
-  if(!rows.length){$('#content').innerHTML='<div class="card">'+(myAccess.length?'Não há perguntas desse módulo para o seu setor.':'Seu usuário ainda não foi vinculado a um setor. Solicite a liberação ao administrador.')+'</div>';return}
-  $('#content').innerHTML='<div class="card"><div class="progress"><span style="width:'+pct+'%"></span></div><div class="muted" style="margin-top:7px">'+done+' de '+total+' perguntas respondidas</div></div>'+rows.map(r=>card(r,answers.find(a=>a.question_id===r.id))).join('');
+  if(!rows.length){$('#content').innerHTML='<div class="card">'+(myAccess.length||isAdmin?'Não há perguntas desse módulo para o seu setor.':'Seu usuário ainda não foi vinculado a um setor. Solicite a liberação ao administrador.')+'</div>';return}
+  $('#content').innerHTML='<div class="card"><strong>'+(currentModule==='educacao'?'Educação':'Segurança Alimentar e Nutricional')+'</strong><div class="progress" style="margin-top:10px"><span style="width:'+pct+'%"></span></div><div class="muted" style="margin-top:7px">'+done+' de '+total+' perguntas respondidas</div></div>'+rows.map(r=>card(r,answers.find(a=>a.question_id===r.id))).join('');
   bindQuestions();
  }catch(e){$('#content').innerHTML='<div class="card err">Erro ao carregar: '+esc(e.message||e)+'</div>'}
 }
@@ -230,14 +228,38 @@ async function saveQ(btn,status){
  const {error}=await db.from('questionnaire_answers_v2').upsert({question_id,answer,notes,status,answered_by:session.user.email,updated_at:new Date().toISOString()},{onConflict:'question_id'});
  if(error)return alert(error.message);await render();
 }
+
+async function renderAdminPanel(){
+ $('#adminPanel').innerHTML='<div class="card">Carregando usuários e progresso...</div>';
+ const [a,m,ans]=await Promise.all([
+   db.from('questionnaire_access').select('*').order('module_code').order('department').order('display_name'),
+   db.from('questionnaire_question_map').select('*').eq('active',true).order('module_code').order('sort_order'),
+   db.from('questionnaire_answers_v2').select('question_id,status,answered_by,updated_at')
+ ]);
+ if(a.error||m.error||ans.error){$('#adminPanel').innerHTML='<div class="card err">Erro ao carregar o painel administrativo.</div>';return}
+ const access=a.data||[], maps=m.data||[], answers=ans.data||[];
+ const answerBy=new Map(answers.map(x=>[x.question_id,x]));
+ const sectors=[...new Set(maps.map(x=>x.module_code+'||'+x.responsible_area))].map(k=>{const [module,dept]=k.split('||');const qs=maps.filter(x=>x.module_code===module&&x.responsible_area===dept);const done=qs.filter(q=>answerBy.get(q.id)?.status==='Respondido').length;return {module,dept,total:qs.length,done,pct:qs.length?Math.round(done*100/qs.length):0}});
+ $('#adminPanel').innerHTML=
+ '<div class="card"><h3 style="margin-top:0">Cadastrar usuário e setor</h3><p class="muted">O cadastro abaixo define o que cada pessoa verá. Não é necessário distribuir pergunta por pergunta.</p>'+
+ '<div class="user-form"><div><label>E-mail</label><input id="uEmail" placeholder="email@xinguara.pa.gov.br"></div><div><label>Nome</label><input id="uName" placeholder="Nome do responsável"></div><div><label>Módulo</label><select id="uModule"><option value="educacao">Educação</option><option value="nutricao">Segurança Alimentar</option></select></div><div><label>Setor</label><select id="uDept"></select></div><button id="addUserBtn">Cadastrar</button></div><div id="userMsg" class="statusline"></div></div>'+
+ '<div class="card"><h3 style="margin-top:0">Progresso por setor</h3><div class="admin-grid">'+sectors.map(s=>'<div class="metric"><span class="muted">'+esc(s.module==='educacao'?'Educação':'Segurança Alimentar')+'</span><strong style="font-size:15px;margin:5px 0">'+esc(s.dept)+'</strong><div class="progress"><span style="width:'+s.pct+'%"></span></div><div class="muted" style="margin-top:6px">'+s.done+' de '+s.total+' - '+s.pct+'%</div></div>').join('')+'</div></div>'+
+ '<div class="card"><h3 style="margin-top:0">Acessos cadastrados</h3>'+(access.length?'<div style="overflow:auto"><table style="width:100%;border-collapse:collapse"><thead><tr><th style="text-align:left;padding:8px;border-bottom:1px solid #d9e2ec">Nome</th><th style="text-align:left;padding:8px;border-bottom:1px solid #d9e2ec">E-mail</th><th style="text-align:left;padding:8px;border-bottom:1px solid #d9e2ec">Módulo</th><th style="text-align:left;padding:8px;border-bottom:1px solid #d9e2ec">Setor</th><th></th></tr></thead><tbody>'+access.map(x=>'<tr><td style="padding:8px;border-bottom:1px solid #eef2f6">'+esc(x.display_name||'')+'</td><td style="padding:8px;border-bottom:1px solid #eef2f6">'+esc(x.email)+'</td><td style="padding:8px;border-bottom:1px solid #eef2f6">'+esc(x.module_code==='educacao'?'Educação':'Segurança Alimentar')+'</td><td style="padding:8px;border-bottom:1px solid #eef2f6">'+esc(x.department)+'</td><td style="padding:8px;border-bottom:1px solid #eef2f6"><button class="secondary small removeAccess" data-email="'+esc(x.email)+'" data-module="'+esc(x.module_code)+'">Remover</button></td></tr>').join('')+'</tbody></table></div>':'<p class="muted">Nenhum acesso cadastrado.</p>')+'</div>';
+ updateDeptOptions();
+ $('#uModule').onchange=updateDeptOptions;$('#addUserBtn').onclick=addUser;
+ document.querySelectorAll('.removeAccess').forEach(b=>b.onclick=async()=>{if(!confirm('Remover este acesso ao questionário?'))return;const {error}=await db.from('questionnaire_access').delete().eq('email',b.dataset.email).eq('module_code',b.dataset.module);if(error)return alert(error.message);await renderAdminPanel()});
+}
 async function addUser(){
  const payload={email:$('#uEmail').value.trim(),display_name:$('#uName').value.trim(),module_code:$('#uModule').value,department:$('#uDept').value,active:true};
  if(!payload.email)return $('#userMsg').innerHTML='<span class="err">Informe o e-mail.</span>';
  const {error}=await db.from('questionnaire_access').upsert(payload,{onConflict:'email,module_code'});
- $('#userMsg').innerHTML=error?'<span class="err">'+esc(error.message)+'</span>':'<span class="oktxt">Usuário/setor cadastrado. Quando essa pessoa entrar, irá direto para as perguntas correspondentes.</span>';
+ if(error){$('#userMsg').innerHTML='<span class="err">'+esc(error.message)+'</span>';return}
+ $('#userMsg').innerHTML='<span class="oktxt">Usuário/setor cadastrado. Quando essa pessoa entrar, irá direto para as perguntas correspondentes.</span>';
+ setTimeout(()=>renderAdminPanel(),600);
 }
-$('#loginBtn').onclick=()=>login(false);$('#signupBtn').onclick=()=>login(true);$('#logoutBtn').onclick=async()=>{await db.auth.signOut();await boot()};$('#refreshBtn').onclick=render;$('#addUserBtn').onclick=addUser;$('#uModule').onchange=updateDeptOptions;
-document.querySelectorAll('.tabs button').forEach(b=>b.onclick=async()=>{document.querySelectorAll('.tabs button').forEach(x=>x.classList.remove('active'));b.classList.add('active');currentModule=b.dataset.module;await render()});
+$('#loginBtn').onclick=()=>login(false);$('#signupBtn').onclick=()=>login(true);$('#logoutBtn').onclick=async()=>{await db.auth.signOut();await boot()};$('#refreshBtn').onclick=render;
+document.querySelectorAll('#moduleTabs button').forEach(b=>b.onclick=async()=>{document.querySelectorAll('#moduleTabs button').forEach(x=>x.classList.remove('active'));b.classList.add('active');currentModule=b.dataset.module;await render()});
+document.querySelectorAll('#adminNav button').forEach(b=>b.onclick=async()=>{document.querySelectorAll('#adminNav button').forEach(x=>x.classList.remove('active'));b.classList.add('active');currentView=b.dataset.view;await render()});
 boot();
 </script>
 </body></html>
