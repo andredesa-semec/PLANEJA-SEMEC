@@ -1,0 +1,119 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Questionários MUNIC 2026 - Xinguara</title>
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <style>
+    :root{--bg:#f5f7fb;--card:#fff;--ink:#172033;--muted:#64748b;--line:#dbe2ea;--brand:#123c69;--brand2:#1f6aa5;--ok:#147d57;--warn:#a16000;--danger:#a52828}
+    *{box-sizing:border-box} body{margin:0;font-family:Inter,system-ui,Segoe UI,Arial,sans-serif;background:var(--bg);color:var(--ink)}
+    header{background:linear-gradient(135deg,var(--brand),var(--brand2));color:white;padding:22px 28px;box-shadow:0 2px 8px #0002}
+    header h1{margin:0;font-size:22px} header p{margin:5px 0 0;opacity:.88}
+    main{max-width:1180px;margin:24px auto;padding:0 18px 60px}
+    .card{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:18px;box-shadow:0 4px 16px #0f172a0d;margin-bottom:16px}
+    .login{max-width:460px;margin:70px auto}.row{display:flex;gap:10px;flex-wrap:wrap}.row>*{flex:1 1 180px}
+    input,textarea,select,button{font:inherit} input,textarea,select{width:100%;padding:11px 12px;border:1px solid #cbd5e1;border-radius:9px;background:#fff} textarea{min-height:130px;resize:vertical}
+    button{border:0;border-radius:9px;padding:10px 14px;cursor:pointer;background:var(--brand);color:white;font-weight:650} button.secondary{background:#e8eef5;color:#18324d} button.small{padding:7px 10px;font-size:13px}
+    .topbar{display:flex;align-items:center;justify-content:space-between;gap:14px;margin-bottom:18px}.badge{display:inline-block;padding:4px 9px;border-radius:999px;font-size:12px;font-weight:700;background:#e6eef7;color:#23496c}.badge.ok{background:#e7f6ef;color:var(--ok)}.badge.warn{background:#fff2d8;color:var(--warn)}
+    .tabs{display:flex;gap:8px;margin:12px 0 18px}.tabs button.active{background:var(--brand2)}
+    .item-head{display:flex;justify-content:space-between;gap:12px;align-items:flex-start}.item-head h3{margin:0 0 5px;font-size:17px}.muted{color:var(--muted);font-size:13px}
+    .grid{display:grid;grid-template-columns:minmax(0,1.15fr) minmax(320px,.85fr);gap:18px;margin-top:14px}.source{background:#eef2f7;border:1px solid var(--line);border-radius:10px;padding:8px}
+    .answer-panel{display:flex;flex-direction:column;gap:10px}.assignment{padding:12px;background:#f8fafc;border:1px dashed #cbd5e1;border-radius:10px}
+    .admin-summary{display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:10px}.metric{padding:13px;background:#f8fafc;border:1px solid var(--line);border-radius:10px}.metric strong{display:block;font-size:22px}.hidden{display:none!important}
+    .statusline{font-size:13px;margin-top:8px}.oktxt{color:var(--ok)}.errtxt{color:var(--danger)}
+    @media(max-width:820px){.grid{grid-template-columns:1fr}.topbar{align-items:flex-start;flex-direction:column}}
+  </style>
+</head>
+<body>
+<header><h1>Questionários MUNIC 2026 - Xinguara/PA</h1><p>Coleta colaborativa - Educação e Cultura</p></header>
+<main>
+  <section id="authBox" class="card login">
+    <h2 style="margin-top:0">Acesso ao sistema</h2>
+    <p class="muted">Entre com seu e-mail e senha. Os responsáveis visualizam apenas os blocos atribuídos; administradores acompanham tudo.</p>
+    <label>E-mail</label><input id="email" type="email" autocomplete="username" />
+    <label style="display:block;margin-top:10px">Senha</label><input id="password" type="password" autocomplete="current-password" />
+    <div class="row" style="margin-top:14px"><button id="loginBtn">Entrar</button><button class="secondary" id="signupBtn">Criar acesso</button></div>
+    <div id="authMsg" class="statusline"></div>
+  </section>
+  <section id="app" class="hidden">
+    <div class="topbar">
+      <div><h2 style="margin:0">Painel de respostas</h2><div id="who" class="muted"></div></div>
+      <div class="row" style="flex:0 0 auto"><button class="secondary small" id="refreshBtn">Atualizar</button><button class="secondary small" id="logoutBtn">Sair</button></div>
+    </div>
+    <div id="adminSummary" class="card hidden"></div>
+    <div class="tabs"><button data-module="educacao" class="active">Educação</button><button data-module="cultura">Cultura</button></div>
+    <div id="content"></div>
+  </section>
+</main>
+<script>
+const SUPABASE_URL='https://abfrudhvxzmdmrxjotkv.supabase.co';
+const SUPABASE_KEY='sb_publishable_1Ge6_2uh9-Ob8kZM_CBDOA_G0tCJyJc';
+const db=supabase.createClient(SUPABASE_URL,SUPABASE_KEY);
+let session=null,isAdmin=false,currentModule='educacao';
+const $=s=>document.querySelector(s);
+function esc(s=''){return String(s).replace(/[&<>"']/g,m=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#039;'}[m]))}
+async function login(signup=false){
+  const email=$('#email').value.trim(), password=$('#password').value; $('#authMsg').textContent='Processando...';
+  const fn=signup?db.auth.signUp({email,password}):db.auth.signInWithPassword({email,password}); const {data,error}=await fn;
+  if(error){$('#authMsg').innerHTML=`<span class="errtxt">${esc(error.message)}</span>`;return}
+  if(signup && !data.session){$('#authMsg').innerHTML='<span class="oktxt">Cadastro criado. Confirme o e-mail, se solicitado, e depois entre.</span>';return}
+  await boot();
+}
+async function boot(){
+  const {data:{session:s}}=await db.auth.getSession(); session=s;
+  if(!session){$('#authBox').classList.remove('hidden');$('#app').classList.add('hidden');return}
+  const email=session.user.email; const {data:admins}=await db.from('questionnaire_admins').select('email,display_name').ilike('email',email);
+  isAdmin=!!(admins&&admins.length); $('#who').textContent=`${email} - ${isAdmin?'Administrador':'Respondente'}`;
+  $('#authBox').classList.add('hidden');$('#app').classList.remove('hidden');await render();
+}
+async function loadData(){
+  const email=session.user.email;
+  const {data:items,error}=await db.from('questionnaire_items').select('*').eq('module_code',currentModule).eq('active',true).order('sort_order');
+  if(error)throw error;
+  const ids=(items||[]).map(x=>x.id); let assignments=[],responses=[];
+  if(ids.length){
+    const a=await db.from('questionnaire_assignments').select('*').in('item_id',ids); if(a.error)throw a.error; assignments=a.data||[];
+    const r=await db.from('questionnaire_responses').select('*').in('item_id',ids); if(r.error)throw r.error; responses=r.data||[];
+  }
+  const visible=isAdmin?items:(items||[]).filter(i=>assignments.some(a=>a.item_id===i.id && a.assigned_email.toLowerCase()===email.toLowerCase()));
+  return {items:visible,assignments,responses};
+}
+async function render(){
+  $('#content').innerHTML='<div class="card">Carregando...</div>';
+  try{
+    const {items,assignments,responses}=await loadData();
+    if(isAdmin){
+      const total=items.length, fin=responses.filter(r=>r.status==='Finalizado').length, assigned=new Set(assignments.map(a=>a.item_id)).size;
+      $('#adminSummary').classList.remove('hidden');
+      $('#adminSummary').innerHTML=`<div class="admin-summary"><div class="metric"><span class="muted">Blocos</span><strong>${total}</strong></div><div class="metric"><span class="muted">Atribuídos</span><strong>${assigned}</strong></div><div class="metric"><span class="muted">Respostas finalizadas</span><strong>${fin}</strong></div><div class="metric"><span class="muted">Módulo</span><strong style="font-size:17px">${currentModule==='educacao'?'Educação':'Cultura'}</strong></div></div>`;
+    } else $('#adminSummary').classList.add('hidden');
+    if(!items.length){$('#content').innerHTML='<div class="card">Nenhum bloco atribuído a este usuário neste módulo.</div>';return}
+    $('#content').innerHTML=items.map(item=>itemCard(item,assignments,responses)).join(''); bindCards();
+  }catch(e){$('#content').innerHTML=`<div class="card errtxt">Erro ao carregar: ${esc(e.message||e)}</div>`}
+}
+function itemCard(item,assignments,responses){
+  const myEmail=session.user.email.toLowerCase(); const ass=assignments.filter(a=>a.item_id===item.id); const mine=responses.find(r=>r.item_id===item.id && r.respondent_email.toLowerCase()===myEmail);
+  const shownResponse=isAdmin?responses.find(r=>r.item_id===item.id):mine;
+  const ast=ass.map(a=>`<span class="badge">${esc(a.department||a.assigned_name||a.assigned_email)}</span>`).join(' ')||'<span class="badge warn">Não atribuído</span>';
+  const status=shownResponse?.status||'Sem resposta';
+  return `<article class="card" data-id="${item.id}"><div class="item-head"><div><h3>${esc(item.item_ref)} - ${esc(item.title)}</h3><div class="muted">${esc(item.source_pages||'')} · ${esc(item.instructions||'')}</div></div><span class="badge ${status==='Finalizado'?'ok':'warn'}">${esc(status)}</span></div>
+  <div style="margin-top:9px">${ast}</div>
+  ${isAdmin?`<div class="assignment" style="margin-top:12px"><strong>Atribuir responsável</strong><div class="row" style="margin-top:8px"><input class="assignEmail" placeholder="e-mail institucional"><input class="assignName" placeholder="nome"><input class="assignDept" placeholder="setor/departamento"><button class="small assignBtn">Atribuir</button></div>${ass.length?`<div class="muted" style="margin-top:8px">Atuais: ${ass.map(a=>esc(a.assigned_email)).join(', ')}</div>`:''}</div>`:''}
+  <div class="grid"><div class="source"><div style="padding:14px"><strong>Bloco do questionário</strong><p>${esc(item.instructions||'')}</p><p class="muted">Referência no formulário original: ${esc(item.source_pages||'')}</p><p class="muted">Registre ao lado a resposta consolidada exatamente como deverá constar no questionário.</p></div></div><div class="answer-panel">
+  <label><strong>Resposta para o questionário</strong></label><textarea class="responseText" ${isAdmin?'readonly':''} placeholder="Registre a resposta exatamente como deverá ser consolidada no questionário...">${esc(shownResponse?.response_text||'')}</textarea>
+  <label><strong>Observações / fonte da informação</strong></label><textarea class="notes" ${isAdmin?'readonly':''} style="min-height:90px">${esc(shownResponse?.notes||'')}</textarea>
+  ${!isAdmin?`<div class="row"><button class="saveBtn">Salvar rascunho</button><button class="finalBtn">Finalizar bloco</button></div>`:`<div class="muted">O administrador acompanha as respostas. Para responder diretamente, use um usuário responsável pelo bloco.</div>`}
+  </div></div></article>`
+}
+function bindCards(){
+  document.querySelectorAll('.assignBtn').forEach(btn=>btn.onclick=async()=>{const c=btn.closest('[data-id]');const item_id=Number(c.dataset.id);const assigned_email=c.querySelector('.assignEmail').value.trim();const assigned_name=c.querySelector('.assignName').value.trim();const department=c.querySelector('.assignDept').value.trim();if(!assigned_email)return alert('Informe o e-mail.');const {error}=await db.from('questionnaire_assignments').upsert({item_id,assigned_email,assigned_name,department,assigned_by:session.user.email},{onConflict:'item_id,assigned_email'});if(error)return alert(error.message);await render()});
+  document.querySelectorAll('.saveBtn').forEach(btn=>btn.onclick=()=>saveResponse(btn,'Em preenchimento'));
+  document.querySelectorAll('.finalBtn').forEach(btn=>btn.onclick=()=>saveResponse(btn,'Finalizado'));
+}
+async function saveResponse(btn,status){const c=btn.closest('[data-id]');const item_id=Number(c.dataset.id);const response_text=c.querySelector('.responseText').value;const notes=c.querySelector('.notes').value;const payload={item_id,respondent_email:session.user.email,response_text,notes,status,updated_at:new Date().toISOString(),finalized_at:status==='Finalizado'?new Date().toISOString():null};const {error}=await db.from('questionnaire_responses').upsert(payload,{onConflict:'item_id,respondent_email'});if(error)return alert(error.message);await render()}
+$('#loginBtn').onclick=()=>login(false);$('#signupBtn').onclick=()=>login(true);$('#logoutBtn').onclick=async()=>{await db.auth.signOut();await boot()};$('#refreshBtn').onclick=render;
+document.querySelectorAll('.tabs button').forEach(b=>b.onclick=async()=>{document.querySelectorAll('.tabs button').forEach(x=>x.classList.remove('active'));b.classList.add('active');currentModule=b.dataset.module;await render()});
+boot();
+</script>
+</body></html>
