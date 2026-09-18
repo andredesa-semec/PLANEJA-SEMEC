@@ -1,118 +1,242 @@
 <!doctype html>
 <html lang="pt-BR">
 <head>
-  <meta charset="utf-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>Questionários MUNIC 2026 - Xinguara</title>
-  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-  <style>
-    :root{--bg:#f5f7fb;--card:#fff;--ink:#172033;--muted:#64748b;--line:#dbe2ea;--brand:#123c69;--brand2:#1f6aa5;--ok:#147d57;--warn:#a16000;--danger:#a52828}
-    *{box-sizing:border-box} body{margin:0;font-family:Inter,system-ui,Segoe UI,Arial,sans-serif;background:var(--bg);color:var(--ink)}
-    header{background:linear-gradient(135deg,var(--brand),var(--brand2));color:white;padding:22px 28px;box-shadow:0 2px 8px #0002}
-    header h1{margin:0;font-size:22px} header p{margin:5px 0 0;opacity:.88}
-    main{max-width:1180px;margin:24px auto;padding:0 18px 60px}
-    .card{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:18px;box-shadow:0 4px 16px #0f172a0d;margin-bottom:16px}
-    .login{max-width:460px;margin:70px auto}.row{display:flex;gap:10px;flex-wrap:wrap}.row>*{flex:1 1 180px}
-    input,textarea,select,button{font:inherit} input,textarea,select{width:100%;padding:11px 12px;border:1px solid #cbd5e1;border-radius:9px;background:#fff} textarea{min-height:130px;resize:vertical}
-    button{border:0;border-radius:9px;padding:10px 14px;cursor:pointer;background:var(--brand);color:white;font-weight:650} button.secondary{background:#e8eef5;color:#18324d} button.small{padding:7px 10px;font-size:13px}
-    .topbar{display:flex;align-items:center;justify-content:space-between;gap:14px;margin-bottom:18px}.badge{display:inline-block;padding:4px 9px;border-radius:999px;font-size:12px;font-weight:700;background:#e6eef7;color:#23496c}.badge.ok{background:#e7f6ef;color:var(--ok)}.badge.warn{background:#fff2d8;color:var(--warn)}
-    .tabs{display:flex;gap:8px;margin:12px 0 18px}.tabs button.active{background:var(--brand2)}
-    .item-head{display:flex;justify-content:space-between;gap:12px;align-items:flex-start}.item-head h3{margin:0 0 5px;font-size:17px}.muted{color:var(--muted);font-size:13px}
-    .grid{display:grid;grid-template-columns:minmax(0,1.15fr) minmax(320px,.85fr);gap:18px;margin-top:14px}.source{background:#eef2f7;border:1px solid var(--line);border-radius:10px;padding:8px}
-    .answer-panel{display:flex;flex-direction:column;gap:10px}.assignment{padding:12px;background:#f8fafc;border:1px dashed #cbd5e1;border-radius:10px}
-    .admin-summary{display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:10px}.metric{padding:13px;background:#f8fafc;border:1px solid var(--line);border-radius:10px}.metric strong{display:block;font-size:22px}.hidden{display:none!important}
-    .statusline{font-size:13px;margin-top:8px}.oktxt{color:var(--ok)}.errtxt{color:var(--danger)}
-    @media(max-width:820px){.grid{grid-template-columns:1fr}.topbar{align-items:flex-start;flex-direction:column}}
-  </style>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Questionários MUNIC 2026 - Xinguara</title>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<style>
+:root{--bg:#f4f7fb;--card:#fff;--ink:#172033;--muted:#66758a;--line:#d9e2ec;--blue:#164b7a;--blue2:#246fa8;--green:#16805a;--amber:#a66200;--red:#a62b2b}
+*{box-sizing:border-box}body{margin:0;font-family:Inter,system-ui,Segoe UI,Arial,sans-serif;background:var(--bg);color:var(--ink)}
+header{background:linear-gradient(135deg,var(--blue),var(--blue2));color:#fff;padding:22px 28px;box-shadow:0 2px 10px #0002}
+header h1{margin:0;font-size:23px}header p{margin:5px 0 0;opacity:.9}
+main{max-width:1120px;margin:24px auto;padding:0 18px 60px}.card{background:#fff;border:1px solid var(--line);border-radius:14px;padding:18px;box-shadow:0 4px 16px #0f172a0d;margin-bottom:16px}
+.login{max-width:470px;margin:70px auto}.hidden{display:none!important}.muted{color:var(--muted);font-size:13px}
+input,textarea,select,button{font:inherit}input,textarea,select{width:100%;padding:11px 12px;border:1px solid #cbd5e1;border-radius:9px;background:#fff}textarea{min-height:95px;resize:vertical}
+button{border:0;border-radius:9px;padding:10px 14px;cursor:pointer;background:var(--blue);color:#fff;font-weight:700}button.secondary{background:#e9eff5;color:#173b5d}button.small{padding:7px 10px;font-size:13px}
+.row{display:flex;gap:10px;flex-wrap:wrap}.row>*{flex:1 1 180px}.topbar{display:flex;align-items:flex-start;justify-content:space-between;gap:12px;margin-bottom:16px}
+.tabs{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:16px}.tabs button.active{background:var(--blue2)}
+.badge{display:inline-block;padding:4px 9px;border-radius:999px;font-size:12px;font-weight:700;background:#e7eef6;color:#254b6d}.badge.ok{background:#e5f6ee;color:var(--green)}.badge.warn{background:#fff1d8;color:var(--amber)}
+.qhead{display:flex;justify-content:space-between;gap:12px;align-items:flex-start}.qhead h3{margin:0;font-size:17px}.qtext{font-size:16px;line-height:1.45;margin:12px 0 14px}
+.fields{display:grid;gap:12px}.field label{display:block;font-weight:650;margin-bottom:6px}.opts{display:flex;gap:12px;flex-wrap:wrap}.opt{display:flex;align-items:center;gap:6px;border:1px solid #dce4ec;padding:8px 10px;border-radius:9px;background:#fafcfe}.opt input{width:auto}
+.actions{display:flex;justify-content:flex-end;gap:8px;margin-top:14px}.progress{height:9px;background:#e6edf4;border-radius:999px;overflow:hidden}.progress span{display:block;height:100%;background:var(--green)}
+.admin-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(190px,1fr));gap:10px}.metric{padding:13px;background:#f8fafc;border:1px solid var(--line);border-radius:10px}.metric strong{display:block;font-size:22px}
+.user-form{display:grid;grid-template-columns:1.5fr 1.2fr 1fr 1.3fr auto;gap:8px;align-items:end}.statusline{font-size:13px;margin-top:8px}.err{color:var(--red)}.oktxt{color:var(--green)}
+@media(max-width:850px){.topbar{flex-direction:column}.user-form{grid-template-columns:1fr}.actions{justify-content:stretch}.actions button{flex:1}}
+</style>
 </head>
 <body>
-<header><h1>Questionários MUNIC 2026 - Xinguara/PA</h1><p>Coleta colaborativa - Educação e Cultura</p></header>
+<header><h1>Questionários MUNIC 2026 - Xinguara/PA</h1><p>Coleta colaborativa - Educação e Segurança Alimentar e Nutricional</p></header>
 <main>
-  <section id="authBox" class="card login">
-    <h2 style="margin-top:0">Acesso ao sistema</h2>
-    <p class="muted">Entre com seu e-mail e senha. Os responsáveis visualizam apenas os blocos atribuídos; administradores acompanham tudo.</p>
-    <label>E-mail</label><input id="email" type="email" autocomplete="username" />
-    <label style="display:block;margin-top:10px">Senha</label><input id="password" type="password" autocomplete="current-password" />
-    <div class="row" style="margin-top:14px"><button id="loginBtn">Entrar</button><button class="secondary" id="signupBtn">Criar acesso</button></div>
-    <div id="authMsg" class="statusline"></div>
-  </section>
-  <section id="app" class="hidden">
-    <div class="topbar">
-      <div><h2 style="margin:0">Painel de respostas</h2><div id="who" class="muted"></div></div>
-      <div class="row" style="flex:0 0 auto"><button class="secondary small" id="refreshBtn">Atualizar</button><button class="secondary small" id="logoutBtn">Sair</button></div>
-    </div>
-    <div id="adminSummary" class="card hidden"></div>
-    <div class="tabs"><button data-module="educacao" class="active">Educação</button><button data-module="cultura">Cultura</button></div>
-    <div id="content"></div>
-  </section>
+<section id="authBox" class="card login">
+<h2 style="margin-top:0">Acesso</h2>
+<p class="muted">Entre com seu e-mail e senha. Depois do login, o sistema abre diretamente as perguntas do seu setor.</p>
+<label>E-mail</label><input id="email" type="email" autocomplete="username">
+<label style="display:block;margin-top:10px">Senha</label><input id="password" type="password" autocomplete="current-password">
+<div class="row" style="margin-top:14px"><button id="loginBtn">Entrar</button><button class="secondary" id="signupBtn">Criar acesso</button></div>
+<div id="authMsg" class="statusline"></div>
+</section>
+<section id="app" class="hidden">
+<div class="topbar"><div><h2 style="margin:0">Questionário</h2><div id="who" class="muted"></div></div><div class="row" style="flex:0 0 auto"><button class="secondary small" id="refreshBtn">Atualizar</button><button class="secondary small" id="logoutBtn">Sair</button></div></div>
+<div id="adminBox" class="card hidden">
+<div class="admin-grid" id="summary"></div>
+<h3>Cadastro de usuários e setores</h3>
+<p class="muted">Cadastre o e-mail uma única vez por módulo. Depois disso, a pessoa entra e vê somente as perguntas do setor cadastrado.</p>
+<div class="user-form">
+<div><label>E-mail</label><input id="uEmail" placeholder="email@xinguara.pa.gov.br"></div>
+<div><label>Nome</label><input id="uName" placeholder="Nome do responsável"></div>
+<div><label>Módulo</label><select id="uModule"><option value="educacao">Educação</option><option value="nutricao">Segurança Alimentar</option></select></div>
+<div><label>Setor</label><select id="uDept"></select></div>
+<button id="addUserBtn">Cadastrar</button>
+</div><div id="userMsg" class="statusline"></div>
+</div>
+<div class="tabs"><button data-module="educacao" class="active">Educação</button><button data-module="nutricao">Segurança Alimentar e Nutricional</button></div>
+<div id="content"></div>
+</section>
 </main>
 <script>
 const SUPABASE_URL='https://abfrudhvxzmdmrxjotkv.supabase.co';
 const SUPABASE_KEY='sb_publishable_1Ge6_2uh9-Ob8kZM_CBDOA_G0tCJyJc';
 const db=supabase.createClient(SUPABASE_URL,SUPABASE_KEY);
-let session=null,isAdmin=false,currentModule='educacao';
 const $=s=>document.querySelector(s);
-function esc(s=''){return String(s).replace(/[&<>"']/g,m=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#039;'}[m]))}
+const esc=s=>String(s??'').replace(/[&<>"']/g,m=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#039;'}[m]));
+let session=null,isAdmin=false,currentModule='educacao',myAccess=[];
+const YN=['Sim','Não'];
+const DEPTS={
+educacao:['Todos','Gabinete / Planejamento','Diretoria de Ensino / Pedagógico','Formação Continuada','Educação Especial / AEE','Recursos Humanos / Carreira','Conselho Municipal de Educação - CME','CACS-FUNDEB','Alimentação Escolar / CAE','Transporte Escolar','Gestão Escolar','Financeiro / Contabilidade','Matrícula / Censo / Educação Infantil'],
+nutricao:['Todos','Segurança Alimentar e Nutricional','Planejamento / Finanças','Agricultura','Educação / PNAE','Assistência Social / CadÚnico']
+};
+const F={
+yesno:(label='Resposta')=>[{key:'resposta',label,type:'single',options:YN}],
+text:(label='Resposta')=>[{key:'resposta',label,type:'text'}],
+number:(label='Quantidade')=>[{key:'quantidade',label,type:'number'}],
+monthyear:(label='Mês e ano')=>[{key:'mes_ano',label,type:'text',placeholder:'MM/AAAA'}],
+multi:(options,label='Marque todas as opções aplicáveis')=>[{key:'opcoes',label,type:'multi',options}],
+single:(options,label='Selecione uma opção')=>[{key:'resposta',label,type:'single',options}]
+};
+const Q={educacao:{},nutricao:{}};
+function add(m,ref,text,fields){Q[m][ref]={ref,text,fields}}
+add('educacao','1','Como se caracteriza a estrutura organizacional responsável pela educação no município?',F.single(['Secretaria municipal exclusiva','Secretaria municipal em conjunto com outras políticas setoriais','Setor subordinado a outra secretaria','Setor subordinado diretamente à chefia do Executivo','Órgão da administração indireta','Não possui estrutura']));
+add('educacao','2','Nome do órgão gestor da educação. (NÃO INFORMAR O NOME DO TITULAR DO ÓRGÃO GESTOR)',F.text('Nome do órgão gestor'));
+add('educacao','3','Sexo do(a) titular do órgão gestor:',F.single(['Masculino','Feminino']));
+add('educacao','4','Idade do(a) titular do órgão gestor:',F.number('Idade em anos'));
+add('educacao','5','Cor/raça do(a) titular do órgão gestor:',F.single(['Branca','Preta','Parda','Indígena','Amarela']));
+add('educacao','6','Escolaridade do(a) titular do órgão gestor:',F.single(['Ensino fundamental (1º Grau) incompleto','Ensino fundamental (1º Grau) completo','Ensino médio (2º Grau) incompleto','Ensino médio (2º Grau) completo','Ensino superior incompleto','Ensino superior completo','Especialização','Mestrado','Doutorado']));
+add('educacao','7','Qual é a área de formação de nível superior do(a) titular do órgão gestor?',F.single(['Administração','Geografia','Psicologia','História','Matemática','Pedagogia','Biologia','Direito','Letras','Educação física','Outra']));
+const medidas=[
+['11.1','Melhoria das condições físicas de acessibilidade nas escolas'],['11.2','Criação/manutenção de salas de recursos multifuncionais'],['11.3','Inclusão de alunos com deficiência nas escolas regulares'],['11.4','Combate à violência nas escolas'],['11.5','Constituição e manutenção de conselhos escolares'],['11.6','Integração escola-comunidade (abertura das escolas à comunidade, uso de espaços coletivos para ações rotineiras da escola, entre outras ações)'],['11.7','Formação inicial de docentes e formação complementar para adequação entre formação de nível superior e as disciplinas que lecionam'],['11.8','Constituição e manutenção de grêmios estudantis e/ou associações de pais'],['11.9','Redução do falta/absenteísmo dos docentes'],['11.10','Formação continuada para professores'],['11.11','Adequação entre a idade dos alunos em relação à série/etapa em que estudam (enfrentamento do atraso escolar)'],['11.12','Alfabetização na idade certa'],['11.13','Elevação do desempenho dos alunos nas avaliações nacionais de larga escala'],['11.14','Diminuição no abandono e evasão escolar (busca ativa de alunos)'],['11.15','Chamamento público para matrícula'],['11.16','Ampliação da jornada escolar'],['11.17','Uso de Tecnologias da Informação e Comunicação (TIC) no processo ensino-aprendizagem'],['11.18','Combate ao bullying']];
+medidas.forEach(([r,t])=>add('educacao',r,'O órgão gestor da educação está adotando medida ou ação em: '+t+'?',F.yesno()));
+add('educacao','12','O órgão gestor da educação adota medidas para o combate a:',F.multi(['Discriminação racial','Discriminação religiosa','Homofobia','Capacitismo','Outros tipos de discriminação','Nenhum dos itens citados']));
+add('educacao','13','O órgão gestor da educação possui:',F.multi(['Projetos voltados para a educação no campo','Projetos voltados para a educação de povos indígenas','Projetos voltados para a educação de comunidades quilombolas','Projetos voltados para a educação de outros povos e comunidades tradicionais','Nenhum dos itens citados']));
+add('educacao','14','O município possui Plano Municipal de Educação (PME)?',[...F.yesno(),{key:'lei_ano',label:'Lei/ano do atual PME',type:'text'}]);
+add('educacao','14a','O município possui Plano Municipal de Educação Inclusiva?',[...F.yesno(),{key:'lei_ano',label:'Lei/ano do plano atual',type:'text'},{key:'capitulo_pme',label:'Se não, existe capítulo específico sobre educação inclusiva no Plano Municipal de Educação?',type:'single',options:YN}]);
+add('educacao','15','O município instituiu/constituiu Fórum Permanente de Educação?',[...F.yesno(),{key:'ano',label:'Em que ano?',type:'number'},{key:'instrumento',label:'Por meio de que instrumento?',type:'single',options:['Lei','Decreto','Portaria','Outro']}]);
+add('educacao','16','O município possui Plano de Carreira para o Magistério?',[...F.yesno(),{key:'lei_ano',label:'Lei/ano de criação',type:'text'}]);
+add('educacao','17','Quais critérios de progressão/promoção/ascensão são utilizados no plano de carreira do magistério do município?',F.multi(['Tempo de efetivo exercício no cargo','Avaliação de desempenho','Qualificação ou titulação - Licenciatura','Qualificação ou titulação - Especialização com carga horária mínima de 360 horas','Qualificação ou titulação - Cursos de atualização/aperfeiçoamento com carga horária inferior a 360 horas','Qualificação ou titulação - Mestrado','Qualificação ou titulação - Doutorado','Desempenho em prova de conhecimentos na área curricular de atuação docente e de conhecimentos pedagógicos','Desempenho dos alunos em avaliação externa','Incorporação permanente de remuneração por ocupação de cargo em comissão','Outros']));
+add('educacao','18','A lei do Plano de Carreira para o magistério prevê expressamente o limite de 2/3 (dois terços) da carga horária para o desempenho das atividades de interação com os educandos?',F.yesno());
+add('educacao','20a','Em 2026, conforme estabelecido pela Lei nº 11.738/2008, o município cumpre o Piso Salarial Profissional Nacional (PSPN) do Magistério Público da Educação Básica?',[{key:'resposta',label:'Situação',type:'single',options:['Cumpre o Piso para todos os profissionais do magistério que atuam na rede, sejam efetivos ou temporários/contratados','Cumpre o Piso apenas para os profissionais efetivos inseridos no plano de carreira','Não cumpre o Piso Nacional do Magistério']}]);
+add('educacao','21','O município possui Plano de Carreira específico e vigente para os(as) profissionais da educação não docentes?',[...F.yesno(),{key:'lei_ano',label:'Lei/ano de criação',type:'text'}]);
+add('educacao','21a','O município possui, nos termos do artigo 14 da Lei de Diretrizes e Bases da Educação Nacional (LDB), lei que define as normas da gestão democrática do ensino público na educação básica?',[...F.yesno(),{key:'lei_ano',label:'Lei/ano de criação',type:'text'}]);
+add('educacao','22','O município possui Conselho Municipal de Educação?',[...F.yesno(),{key:'lei_ano',label:'Lei/ano de criação',type:'text'},{key:'situacao',label:'Situação do conselho',type:'single',options:['Ativo','Inativo','Foi criado, mas não foi instalado']},{key:'composicao',label:'Composição predominante',type:'single',options:['Paritário','Tem maior representação governamental','Tem maior representação da sociedade civil']}]);
+add('educacao','23','Caráter do Conselho Municipal de Educação:',F.multi(['Consultivo','Deliberativo','Normativo','Fiscalizador']));
+add('educacao','24','Quantidade de reuniões (presenciais ou remotas) realizadas pelo Conselho nos últimos 12 meses:',F.number('Número de reuniões'));
+add('educacao','25','Número de conselheiros (titulares e suplentes):',F.number('Número de conselheiros'));
+add('educacao','26','O município realiza capacitação para os membros do Conselho Municipal de Educação?',F.single(['Periodicamente','Ocasionalmente','Não realiza']));
+add('educacao','26a','Nos últimos dois anos o município realizou capacitação para os membros do Conselho Municipal de Educação?',F.single(['Sim','Não','Não sabe informar']));
+add('educacao','27','O município disponibiliza infraestrutura para o funcionamento do Conselho Municipal de Educação?',[...F.yesno(),...F.multi(['Sala própria','Computador','Impressora','Acesso à internet','Veículo próprio','Telefone','Diárias','Dotação orçamentária própria','Transporte/Locomoção','Apoio administrativo (Secretaria)'],'Se sim, quais?')]);
+add('educacao','28','O Conselho Municipal de Educação é composto por representantes de:',F.multi(['Pais e alunos','Câmara Municipal','Diretores das escolas da rede municipal de ensino','Servidores das escolas da rede municipal de ensino','Conselho de Direitos da Criança e do Adolescente e/ou Conselho Tutelar','Escolas da rede privada','Instituição de ensino superior','Sindicato/associação de profissionais da educação','Poder Executivo/Secretaria de Educação','Movimento negro','Comunidades quilombolas','Povos indígenas','Outros povos e comunidades tradicionais','Movimento de pessoas com deficiência','Outros']));
+add('educacao','29','Qual a função do gestor da educação no Conselho Municipal de Educação?',F.single(['Membro nato','Presidente do conselho','Membro do conselho, como representante do Poder Executivo','Participa apenas como ouvinte']));
+add('educacao','30','O município possui Conselho de Controle e Acompanhamento Social do Fundo de Manutenção e Desenvolvimento da Educação Básica (FUNDEB)?',[...F.yesno(),{key:'lei_ano',label:'Lei/ano de criação',type:'text'},{key:'situacao',label:'Situação do conselho',type:'single',options:['Ativo','Inativo','Foi criado, mas não foi instalado']},{key:'composicao',label:'Composição predominante',type:'single',options:['Paritário','Tem maior representação governamental','Tem maior representação da sociedade civil']}]);
+add('educacao','31','Quantidade de reuniões (presenciais ou remotas) realizadas pelo CACS-FUNDEB nos últimos 12 meses:',F.number('Número de reuniões'));
+add('educacao','32','Número de conselheiros (titulares e suplentes) do CACS-FUNDEB:',F.number('Número de conselheiros'));
+add('educacao','33','O município realiza capacitação para os membros do CACS-FUNDEB?',F.single(['Periodicamente','Ocasionalmente','Não realiza']));
+add('educacao','33a','Nos últimos dois anos o município realizou capacitação para os membros do CACS-FUNDEB?',F.single(['Sim','Não','Não sabe informar']));
+add('educacao','34','O município disponibiliza infraestrutura para o funcionamento do CACS-FUNDEB?',[...F.yesno(),...F.multi(['Sala própria','Computador','Impressora','Acesso à internet','Veículo próprio','Telefone','Diárias','Dotação orçamentária própria','Transporte/Locomoção','Apoio administrativo (Secretaria)'],'Se sim, quais?')]);
+add('educacao','35','O município possui Conselho Municipal de Alimentação Escolar?',[...F.yesno(),{key:'lei_ano',label:'Lei/ano de criação',type:'text'},{key:'situacao',label:'Situação do conselho',type:'single',options:['Ativo','Inativo','Foi criado, mas não foi instalado']},{key:'composicao',label:'Composição predominante',type:'single',options:['Paritário','Tem maior representação governamental','Tem maior representação da sociedade civil']}]);
+add('educacao','36','Caráter do Conselho Municipal de Alimentação Escolar:',F.multi(['Consultivo','Deliberativo','Normativo','Fiscalizador']));
+add('educacao','37','Quantidade de reuniões realizadas pelo Conselho Municipal de Alimentação Escolar nos últimos 12 meses:',F.number('Número de reuniões'));
+add('educacao','38','Número de conselheiros (titulares e suplentes) do Conselho Municipal de Alimentação Escolar:',F.number('Número de conselheiros'));
+add('educacao','39','O município realiza capacitação para os membros do Conselho Municipal de Alimentação Escolar?',F.single(['Periodicamente','Ocasionalmente','Não realiza']));
+add('educacao','39a','Nos últimos dois anos o município realizou capacitação para os membros do Conselho Municipal de Alimentação Escolar?',F.single(['Sim','Não','Não sabe informar']));
+add('educacao','40','O município disponibiliza infraestrutura para o funcionamento do Conselho Municipal de Alimentação Escolar?',[...F.yesno(),...F.multi(['Sala própria','Computador','Impressora','Acesso à internet','Veículo próprio','Telefone','Diárias','Dotação orçamentária própria','Transporte/Locomoção','Apoio administrativo (Secretaria)'],'Se sim, quais?')]);
+add('educacao','41','O município possui Conselho Municipal de Transporte Escolar?',[...F.yesno(),{key:'lei_ano',label:'Lei/ano de criação',type:'text'},{key:'situacao',label:'Situação do conselho',type:'single',options:['Ativo','Inativo','Foi criado, mas não foi instalado']},{key:'composicao',label:'Composição predominante',type:'single',options:['Paritário','Tem maior representação governamental','Tem maior representação da sociedade civil']}]);
+add('educacao','42','Caráter do Conselho Municipal de Transporte Escolar:',F.multi(['Consultivo','Deliberativo','Normativo','Fiscalizador']));
+add('educacao','43','Quantidade de reuniões realizadas pelo Conselho Municipal de Transporte Escolar nos últimos 12 meses:',F.number('Número de reuniões'));
+add('educacao','44','Número de conselheiros (titulares e suplentes) do Conselho Municipal de Transporte Escolar:',F.number('Número de conselheiros'));
+add('educacao','45','O município realiza capacitação para os membros do Conselho Municipal de Transporte Escolar?',F.single(['Periodicamente','Ocasionalmente','Não realiza']));
+add('educacao','45a','Nos últimos dois anos o município realizou capacitação para os membros do Conselho Municipal de Transporte Escolar?',F.single(['Sim','Não','Não sabe informar']));
+add('educacao','46','O município disponibiliza infraestrutura para o funcionamento do Conselho Municipal de Transporte Escolar?',[...F.yesno(),...F.multi(['Sala própria','Computador','Impressora','Acesso à internet','Veículo próprio','Telefone','Diárias','Dotação orçamentária própria','Transporte/Locomoção','Apoio administrativo (Secretaria)'],'Se sim, quais?')]);
+add('educacao','47','O município possui lei municipal que estabelece a criação de conselhos escolares?',[...F.yesno(),{key:'lei_ano',label:'Lei/ano de criação',type:'text'},{key:'composicao',label:'Os conselhos são',type:'single',options:['Paritários','Têm maior representação dos profissionais das escolas','Têm maior representação dos alunos e famílias']}]);
+add('educacao','48','A ordenação de despesas da educação está sob responsabilidade do(a):',F.single(['Prefeito(a)','Vice-prefeito(a)','Secretário(a) de Educação','Secretário(a) de Finanças / secretário(a) de Fazenda','Outros','Não sabe informar']));
+add('educacao','49','A nomeação do(a)s Diretor(a)s das escolas da rede municipal de ensino ocorre por:',F.multi(['Indicação','Processo seletivo','Eleição','Concurso (para carreira de diretor de escola constituída por cargo público específico de diretor de escola)','Outro']));
+add('educacao','50','O município realiza levantamento de demanda de população em idade escolar que não esteja sendo atendida?',F.multi(['Pré-escola (4 e 5 anos)','Ensino fundamental (6 a 14 anos)','Educação de jovens e adultos do ensino fundamental (maiores de 15 anos)','Não realiza']));
+add('educacao','51','Há no município mecanismos de consulta pública da demanda das famílias por creches?',F.yesno());
+add('educacao','52','Existe no município creche de responsabilidade do poder público municipal?',[...F.yesno(),{key:'quantas',label:'Quantas creches municipais existem?',type:'number'},{key:'tempo_integral',label:'Quantas são de tempo integral?',type:'number'}]);
+add('educacao','53','A pessoa responsável pela informação foi identificada em outro bloco?',[...F.yesno(),{key:'bloco',label:'Se sim, informe o bloco',type:'text'},{key:'nome',label:'Se não, nome do responsável pela informação',type:'text'},{key:'cargo',label:'Cargo',type:'text'},{key:'telefone',label:'Telefone',type:'text'}]);
+
+add('nutricao','1','Como se caracteriza a estrutura organizacional responsável pela segurança alimentar e nutricional no município?',F.single(['Secretaria municipal exclusiva','Secretaria municipal em conjunto com outras políticas setoriais','Setor subordinado a outra secretaria','Setor subordinado diretamente à chefia do Executivo','Órgão da administração indireta','Não possui estrutura']));
+add('nutricao','2','A que secretaria ou setor a política de segurança alimentar e nutricional está associada ou subordinada?',F.multi(['Assistência social','Agricultura','Planejamento','Saúde','Educação','Direitos humanos','Outra']));
+add('nutricao','3','Nome do órgão gestor da segurança alimentar e nutricional. (NÃO INFORMAR O NOME DO TITULAR DO ÓRGÃO GESTOR)',F.text('Nome do órgão gestor'));
+add('nutricao','4','Sexo do(a) titular do órgão gestor:',F.single(['Masculino','Feminino']));
+add('nutricao','5','Idade do(a) titular do órgão gestor:',F.number('Idade em anos'));
+add('nutricao','6','Cor/raça do(a) titular do órgão gestor:',F.single(['Branca','Preta','Parda','Indígena','Amarela']));
+add('nutricao','7','Escolaridade do(a) titular do órgão gestor:',F.single(['Ensino fundamental (1º Grau) incompleto','Ensino fundamental (1º Grau) completo','Ensino médio (2º Grau) incompleto','Ensino médio (2º Grau) completo','Ensino superior incompleto','Ensino superior completo','Especialização','Mestrado','Doutorado']));
+add('nutricao','8','Com relação à lei municipal de segurança alimentar e nutricional:',[{key:'situacao',label:'Situação',type:'single',options:['Possui lei','A lei está em trâmite','Não possui']},{key:'numero_lei',label:'Número da lei',type:'text'},{key:'promulgacao',label:'Mês e ano da promulgação',type:'text',placeholder:'MM/AAAA'},{key:'apresentacao',label:'Se em trâmite, mês e ano da apresentação do projeto de lei',type:'text',placeholder:'MM/AAAA'}]);
+add('nutricao','9','O município possui Plano Municipal de Segurança Alimentar e Nutricional (PLAMSAN)?',[...F.yesno(),{key:'inicio',label:'Mês e ano do início da vigência',type:'text',placeholder:'MM/AAAA'},{key:'termino',label:'Mês e ano do término da vigência',type:'text',placeholder:'MM/AAAA'}]);
+add('nutricao','10','O Plano Municipal de Segurança Alimentar e Nutricional foi aprovado pelo Conselho Municipal de Segurança Alimentar e Nutricional?',F.yesno());
+add('nutricao','11','O desenvolvimento do Plano Municipal de Segurança Alimentar e Nutricional é avaliado anualmente?',[...F.yesno(),...F.multi(['Órgão gestor de segurança alimentar e nutricional','Conselho Municipal de Segurança Alimentar e Nutricional','Outro'],'Se sim, por quem?')]);
+add('nutricao','12','O município possui Conselho Municipal de Segurança Alimentar e Nutricional?',[...F.yesno(),{key:'lei_ano',label:'Lei/ano de criação',type:'text'},{key:'situacao',label:'Situação do conselho',type:'single',options:['Ativo','Inativo','Foi criado, mas não foi instalado']},{key:'composicao',label:'O conselho é',type:'single',options:['2/3 sociedade civil e 1/3 governo','Paritário','Tem maior representação governamental','Outra']}]);
+add('nutricao','13','Caráter do Conselho Municipal de Segurança Alimentar e Nutricional:',F.multi(['Consultivo','Deliberativo','Normativo','Fiscalizador']));
+add('nutricao','14','Quantidade de reuniões (presenciais ou remotas) realizadas pelo Conselho nos últimos 12 meses:',F.number('Número de reuniões'));
+add('nutricao','15','Número de conselheiros (titulares e suplentes):',F.number('Número de conselheiros'));
+add('nutricao','16','O município realiza capacitação para os membros do Conselho?',F.single(['Periodicamente','Ocasionalmente','Não realiza']));
+add('nutricao','17','O município disponibiliza infraestrutura para o funcionamento do Conselho?',[...F.yesno(),...F.multi(['Sala própria','Computador','Impressora','Acesso à internet','Veículo próprio','Telefone','Diárias','Dotação orçamentária própria','Transporte/Locomoção','Apoio administrativo (Secretaria)'],'Se sim, quais?')]);
+add('nutricao','18','O município possui câmara ou instância governamental de articulação intersetorial dos programas e ações de segurança alimentar e nutricional, com atribuições similares à Câmara Interministerial de Segurança Alimentar e Nutricional?',F.yesno());
+add('nutricao','19','Qual órgão municipal é responsável pela coordenação desta câmara ou instância?',F.text('Órgão municipal responsável'));
+add('nutricao','20','Há recursos orçamentários municipais para apoiar o funcionamento da Câmara ou Instância Intersetorial?',F.yesno());
+add('nutricao','21','O município realizou alguma Conferência Municipal de Segurança Alimentar e Nutricional nos últimos 5 anos?',[...F.yesno(),{key:'ano',label:'Em que ano foi realizada a última Conferência?',type:'number'}]);
+add('nutricao','22','O município participou de alguma Conferência Estadual de Segurança Alimentar e Nutricional nos últimos 5 anos?',[...F.yesno(),{key:'ano',label:'Em que ano ocorreu a participação mais recente?',type:'number'}]);
+add('nutricao','23','O município possui Fundo Municipal de Segurança Alimentar e Nutricional?',[...F.yesno(),{key:'lei_ano',label:'Lei/ano de criação',type:'text'},{key:'conselho_gestor',label:'O conselho gestor do Fundo é o Conselho Municipal de Segurança Alimentar e Nutricional?',type:'single',options:['Sim','Não','O fundo possui um conselho gestor próprio']}]);
+add('nutricao','24','Qual a origem dos recursos do Fundo Municipal de Segurança Alimentar e Nutricional?',F.multi(['Próprio do município','Do Estado','Da União','De entidades/organismos privados nacionais','De entidades/organismos internacionais','Não sabe informar','Nenhum dos relacionados']));
+const acoes=[
+['25.1','Atividades de educação alimentar e nutricional'],['25.2','Atividades de capacitação, fomento ou incentivo à produção orgânica e/ou agroecológica'],['25.3','Doação de alimentos para grupos específicos e/ou povos indígenas, comunidades quilombolas e demais povos ou comunidades tradicionais'],['25.4','Manutenção de feiras livres/populares ou mercados públicos de alimentos'],['25.5','Manutenção de bancos de alimentos'],['25.6','Manutenção de cozinhas comunitárias'],['25.7','Manutenção de restaurantes populares'],['25.8','Manutenção de equipamentos de abastecimento público de alimentos (ex.: centrais de abastecimento - Ceasas, entrepostos)'],['25.9','Atividades de agricultura urbana (ex.: hortas comunitárias em terrenos urbanos)'],['25.10','Programa de alimentação escolar'],['25.11','Programa de hortas escolares'],['25.12','Serviços de Assistência Técnica e Extensão Rural (ATER) para agricultores familiares e povos e comunidades tradicionais']
+];
+acoes.forEach(([r,t])=>add('nutricao',r,'O município desenvolve '+t+'?',[...F.yesno(),...F.multi(['Repassado pelo governo federal','Repassado pelo governo estadual','Próprio'],'Se sim, com recurso:')]));
+add('nutricao','25.13','O município realiza compras públicas da agricultura familiar?',[...F.yesno(),...F.multi(['Programa Nacional de Alimentação Escolar (PNAE)','Programa de Aquisição de Alimentos (PAA)','Programas estaduais','Programas próprios'],'Por meio de quais programas?'),...F.multi(['Repassado pelo governo federal','Repassado pelo governo estadual','Próprio'],'Com recurso:')]);
+add('nutricao','25.14','O município desenvolve atividades relacionadas ao público do Cadastro Único ou Bolsa Família?',[...F.yesno(),...F.multi(['Cursos de capacitação e/ou educação alimentar e nutricional','Encaminhamento a outras redes de serviços (assistência, saúde, educação)','Avaliação nutricional','Disseminação de orientações técnicas e materiais informativos','Atividades relacionadas à geração de trabalho e renda'],'Por meio de quais programas/ações?'),...F.multi(['Repassado pelo governo federal','Repassado pelo governo estadual','Próprio'],'Com recurso:')]);
+add('nutricao','25.15','O município possui Programa Cisternas, incluindo água para consumo e produção?',F.yesno());
+const equips=[['26.1','Mercado(s) Público(s)?'],['26.2','Sacolão(ões) ou Quitanda(s) Pública(s)?'],['26.3','Restaurante(s) Popular(es)?'],['26.4','Cozinha(s) Comunitária(s)?'],['26.5','Banco(s) de Alimentos?'],['26.6','Central(is) de Recebimento da Agricultura Familiar?']];
+equips.forEach(([r,t])=>add('nutricao',r,'Com relação aos equipamentos de segurança alimentar e nutricional, existe(m) '+t,[...F.yesno(),...F.number('Quantidade')]));
+add('nutricao','27','Existe(m) Feira(s) Livre(s) em funcionamento no município?',[...F.yesno(),{key:'quantas',label:'Quantas?',type:'number'}]);
+add('nutricao','28','A pessoa responsável pela informação foi identificada em outro bloco?',[...F.yesno(),{key:'bloco',label:'Se sim, informe o bloco',type:'text'},{key:'nome',label:'Se não, nome do responsável pela informação',type:'text'},{key:'cargo',label:'Cargo',type:'text'},{key:'telefone',label:'Telefone',type:'text'}]);
+
 async function login(signup=false){
-  const email=$('#email').value.trim(), password=$('#password').value; $('#authMsg').textContent='Processando...';
-  const fn=signup?db.auth.signUp({email,password}):db.auth.signInWithPassword({email,password}); const {data,error}=await fn;
-  if(error){$('#authMsg').innerHTML=`<span class="errtxt">${esc(error.message)}</span>`;return}
-  if(signup && !data.session){$('#authMsg').innerHTML='<span class="oktxt">Cadastro criado. Confirme o e-mail, se solicitado, e depois entre.</span>';return}
-  await boot();
+ const email=$('#email').value.trim(),password=$('#password').value;$('#authMsg').textContent='Processando...';
+ const {data,error}=signup?await db.auth.signUp({email,password}):await db.auth.signInWithPassword({email,password});
+ if(error){$('#authMsg').innerHTML='<span class="err">'+esc(error.message)+'</span>';return}
+ if(signup&&!data.session){$('#authMsg').innerHTML='<span class="oktxt">Cadastro criado. Confirme o e-mail, se solicitado, e depois entre.</span>';return}
+ await boot();
 }
 async function boot(){
-  const {data:{session:s}}=await db.auth.getSession(); session=s;
-  if(!session){$('#authBox').classList.remove('hidden');$('#app').classList.add('hidden');return}
-  const email=session.user.email; const {data:admins}=await db.from('questionnaire_admins').select('email,display_name').ilike('email',email);
-  isAdmin=!!(admins&&admins.length); $('#who').textContent=`${email} - ${isAdmin?'Administrador':'Respondente'}`;
-  $('#authBox').classList.add('hidden');$('#app').classList.remove('hidden');await render();
+ const {data:{session:s}}=await db.auth.getSession();session=s;
+ if(!session){$('#authBox').classList.remove('hidden');$('#app').classList.add('hidden');return}
+ const email=session.user.email;
+ const {data:admins}=await db.from('questionnaire_admins').select('email').ilike('email',email);isAdmin=!!admins?.length;
+ const {data:access}=await db.from('questionnaire_access').select('*').ilike('email',email).eq('active',true);myAccess=access||[];
+ $('#who').textContent=email+' - '+(isAdmin?'Administrador':(myAccess.map(x=>x.department).join(' | ')||'Aguardando liberação'));
+ $('#authBox').classList.add('hidden');$('#app').classList.remove('hidden');$('#adminBox').classList.toggle('hidden',!isAdmin);
+ updateDeptOptions();await render();
 }
-async function loadData(){
-  const email=session.user.email;
-  const {data:items,error}=await db.from('questionnaire_items').select('*').eq('module_code',currentModule).eq('active',true).order('sort_order');
-  if(error)throw error;
-  const ids=(items||[]).map(x=>x.id); let assignments=[],responses=[];
-  if(ids.length){
-    const a=await db.from('questionnaire_assignments').select('*').in('item_id',ids); if(a.error)throw a.error; assignments=a.data||[];
-    const r=await db.from('questionnaire_responses').select('*').in('item_id',ids); if(r.error)throw r.error; responses=r.data||[];
-  }
-  const visible=isAdmin?items:(items||[]).filter(i=>assignments.some(a=>a.item_id===i.id && a.assigned_email.toLowerCase()===email.toLowerCase()));
-  return {items:visible,assignments,responses};
+function updateDeptOptions(){
+ const m=$('#uModule')?.value||'educacao';if(!$('#uDept'))return;
+ $('#uDept').innerHTML=DEPTS[m].map(x=>'<option>'+esc(x)+'</option>').join('');
+}
+async function getRows(){
+ const {data:map,error}=await db.from('questionnaire_question_map').select('*').eq('module_code',currentModule).eq('active',true).order('sort_order');if(error)throw error;
+ const visible=isAdmin?map:(map||[]).filter(q=>myAccess.some(a=>a.module_code===currentModule&&(a.department==='Todos'||a.department===q.responsible_area)));
+ const ids=visible.map(x=>x.id);let answers=[];
+ if(ids.length){const r=await db.from('questionnaire_answers_v2').select('*').in('question_id',ids);if(r.error)throw r.error;answers=r.data||[]}
+ return {rows:visible,answers};
 }
 async function render(){
-  $('#content').innerHTML='<div class="card">Carregando...</div>';
-  try{
-    const {items,assignments,responses}=await loadData();
-    if(isAdmin){
-      const total=items.length, fin=responses.filter(r=>r.status==='Finalizado').length, assigned=new Set(assignments.map(a=>a.item_id)).size;
-      $('#adminSummary').classList.remove('hidden');
-      $('#adminSummary').innerHTML=`<div class="admin-summary"><div class="metric"><span class="muted">Blocos</span><strong>${total}</strong></div><div class="metric"><span class="muted">Atribuídos</span><strong>${assigned}</strong></div><div class="metric"><span class="muted">Respostas finalizadas</span><strong>${fin}</strong></div><div class="metric"><span class="muted">Módulo</span><strong style="font-size:17px">${currentModule==='educacao'?'Educação':'Cultura'}</strong></div></div>`;
-    } else $('#adminSummary').classList.add('hidden');
-    if(!items.length){$('#content').innerHTML='<div class="card">Nenhum bloco atribuído a este usuário neste módulo.</div>';return}
-    $('#content').innerHTML=items.map(item=>itemCard(item,assignments,responses)).join(''); bindCards();
-  }catch(e){$('#content').innerHTML=`<div class="card errtxt">Erro ao carregar: ${esc(e.message||e)}</div>`}
+ $('#content').innerHTML='<div class="card">Carregando...</div>';
+ try{
+  const {rows,answers}=await getRows();
+  const total=rows.length,done=answers.filter(x=>x.status==='Respondido').length,pct=total?Math.round(done*100/total):0;
+  if(isAdmin)$('#summary').innerHTML='<div class="metric"><span class="muted">Perguntas neste módulo</span><strong>'+total+'</strong></div><div class="metric"><span class="muted">Respondidas</span><strong>'+done+'</strong></div><div class="metric"><span class="muted">Progresso</span><strong>'+pct+'%</strong></div><div class="metric"><span class="muted">Módulo</span><strong style="font-size:17px">'+(currentModule==='educacao'?'Educação':'Segurança Alimentar')+'</strong></div>';
+  if(!rows.length){$('#content').innerHTML='<div class="card">'+(myAccess.length?'Não há perguntas desse módulo para o seu setor.':'Seu usuário ainda não foi vinculado a um setor. Solicite a liberação ao administrador.')+'</div>';return}
+  $('#content').innerHTML='<div class="card"><div class="progress"><span style="width:'+pct+'%"></span></div><div class="muted" style="margin-top:7px">'+done+' de '+total+' perguntas respondidas</div></div>'+rows.map(r=>card(r,answers.find(a=>a.question_id===r.id))).join('');
+  bindQuestions();
+ }catch(e){$('#content').innerHTML='<div class="card err">Erro ao carregar: '+esc(e.message||e)+'</div>'}
 }
-function itemCard(item,assignments,responses){
-  const myEmail=session.user.email.toLowerCase(); const ass=assignments.filter(a=>a.item_id===item.id); const mine=responses.find(r=>r.item_id===item.id && r.respondent_email.toLowerCase()===myEmail);
-  const shownResponse=isAdmin?responses.find(r=>r.item_id===item.id):mine;
-  const ast=ass.map(a=>`<span class="badge">${esc(a.department||a.assigned_name||a.assigned_email)}</span>`).join(' ')||'<span class="badge warn">Não atribuído</span>';
-  const status=shownResponse?.status||'Sem resposta';
-  return `<article class="card" data-id="${item.id}"><div class="item-head"><div><h3>${esc(item.item_ref)} - ${esc(item.title)}</h3><div class="muted">${esc(item.source_pages||'')} · ${esc(item.instructions||'')}</div></div><span class="badge ${status==='Finalizado'?'ok':'warn'}">${esc(status)}</span></div>
-  <div style="margin-top:9px">${ast}</div>
-  ${isAdmin?`<div class="assignment" style="margin-top:12px"><strong>Atribuir responsável</strong><div class="row" style="margin-top:8px"><input class="assignEmail" placeholder="e-mail institucional"><input class="assignName" placeholder="nome"><input class="assignDept" placeholder="setor/departamento"><button class="small assignBtn">Atribuir</button></div>${ass.length?`<div class="muted" style="margin-top:8px">Atuais: ${ass.map(a=>esc(a.assigned_email)).join(', ')}</div>`:''}</div>`:''}
-  <div class="grid"><div class="source"><div style="padding:14px"><strong>Bloco do questionário</strong><p>${esc(item.instructions||'')}</p><p class="muted">Referência no formulário original: ${esc(item.source_pages||'')}</p><p class="muted">Registre ao lado a resposta consolidada exatamente como deverá constar no questionário.</p></div></div><div class="answer-panel">
-  <label><strong>Resposta para o questionário</strong></label><textarea class="responseText" ${isAdmin?'readonly':''} placeholder="Registre a resposta exatamente como deverá ser consolidada no questionário...">${esc(shownResponse?.response_text||'')}</textarea>
-  <label><strong>Observações / fonte da informação</strong></label><textarea class="notes" ${isAdmin?'readonly':''} style="min-height:90px">${esc(shownResponse?.notes||'')}</textarea>
-  ${!isAdmin?`<div class="row"><button class="saveBtn">Salvar rascunho</button><button class="finalBtn">Finalizar bloco</button></div>`:`<div class="muted">O administrador acompanha as respostas. Para responder diretamente, use um usuário responsável pelo bloco.</div>`}
-  </div></div></article>`
+function card(row,ans){
+ const def=Q[currentModule][row.question_ref]||{ref:row.question_ref,text:'Pergunta '+row.question_ref,fields:F.text()};
+ const val=ans?.answer||{};
+ return '<article class="card question" data-id="'+row.id+'" data-ref="'+esc(row.question_ref)+'"><div class="qhead"><div><h3>Questão '+esc(row.question_ref)+'</h3><div class="muted">'+esc(row.responsible_area)+'</div></div><span class="badge '+(ans?.status==='Respondido'?'ok':'warn')+'">'+esc(ans?.status||'Pendente')+'</span></div><div class="qtext">'+esc(def.text)+'</div><div class="fields">'+def.fields.map(f=>fieldHtml(f,val[f.key])).join('')+'</div><div class="field" style="margin-top:12px"><label>Observação ou fonte da informação (opcional)</label><textarea class="notes">'+esc(ans?.notes||'')+'</textarea></div><div class="actions"><button class="secondary saveDraft">Salvar</button><button class="saveDone">Salvar e marcar como respondida</button></div></article>';
 }
-function bindCards(){
-  document.querySelectorAll('.assignBtn').forEach(btn=>btn.onclick=async()=>{const c=btn.closest('[data-id]');const item_id=Number(c.dataset.id);const assigned_email=c.querySelector('.assignEmail').value.trim();const assigned_name=c.querySelector('.assignName').value.trim();const department=c.querySelector('.assignDept').value.trim();if(!assigned_email)return alert('Informe o e-mail.');const {error}=await db.from('questionnaire_assignments').upsert({item_id,assigned_email,assigned_name,department,assigned_by:session.user.email},{onConflict:'item_id,assigned_email'});if(error)return alert(error.message);await render()});
-  document.querySelectorAll('.saveBtn').forEach(btn=>btn.onclick=()=>saveResponse(btn,'Em preenchimento'));
-  document.querySelectorAll('.finalBtn').forEach(btn=>btn.onclick=()=>saveResponse(btn,'Finalizado'));
+function fieldHtml(f,v){
+ if(f.type==='single')return '<div class="field" data-key="'+esc(f.key)+'" data-type="single"><label>'+esc(f.label)+'</label><div class="opts">'+f.options.map(o=>'<label class="opt"><input type="radio" name="q_'+Math.random().toString(36).slice(2)+'" value="'+esc(o)+'" '+(v===o?'checked':'')+'> '+esc(o)+'</label>').join('')+'</div></div>';
+ if(f.type==='multi'){const a=Array.isArray(v)?v:[];return '<div class="field" data-key="'+esc(f.key)+'" data-type="multi"><label>'+esc(f.label)+'</label><div class="opts">'+f.options.map(o=>'<label class="opt"><input type="checkbox" value="'+esc(o)+'" '+(a.includes(o)?'checked':'')+'> '+esc(o)+'</label>').join('')+'</div></div>'}
+ return '<div class="field" data-key="'+esc(f.key)+'" data-type="'+esc(f.type)+'"><label>'+esc(f.label)+'</label><input type="'+(f.type==='number'?'number':'text')+'" value="'+esc(v??'')+'" placeholder="'+esc(f.placeholder||'')+'"></div>';
 }
-async function saveResponse(btn,status){const c=btn.closest('[data-id]');const item_id=Number(c.dataset.id);const response_text=c.querySelector('.responseText').value;const notes=c.querySelector('.notes').value;const payload={item_id,respondent_email:session.user.email,response_text,notes,status,updated_at:new Date().toISOString(),finalized_at:status==='Finalizado'?new Date().toISOString():null};const {error}=await db.from('questionnaire_responses').upsert(payload,{onConflict:'item_id,respondent_email'});if(error)return alert(error.message);await render()}
-$('#loginBtn').onclick=()=>login(false);$('#signupBtn').onclick=()=>login(true);$('#logoutBtn').onclick=async()=>{await db.auth.signOut();await boot()};$('#refreshBtn').onclick=render;
+function collect(card){
+ const out={};card.querySelectorAll('.field[data-key]').forEach(el=>{const key=el.dataset.key,type=el.dataset.type;if(type==='single'){out[key]=el.querySelector('input:checked')?.value||''}else if(type==='multi'){out[key]=[...el.querySelectorAll('input:checked')].map(x=>x.value)}else{out[key]=el.querySelector('input')?.value||''}});return out;
+}
+function bindQuestions(){
+ document.querySelectorAll('.saveDraft').forEach(b=>b.onclick=()=>saveQ(b,'Em preenchimento'));
+ document.querySelectorAll('.saveDone').forEach(b=>b.onclick=()=>saveQ(b,'Respondido'));
+}
+async function saveQ(btn,status){
+ const c=btn.closest('.question'),question_id=Number(c.dataset.id),answer=collect(c),notes=c.querySelector('.notes').value;
+ const {error}=await db.from('questionnaire_answers_v2').upsert({question_id,answer,notes,status,answered_by:session.user.email,updated_at:new Date().toISOString()},{onConflict:'question_id'});
+ if(error)return alert(error.message);await render();
+}
+async function addUser(){
+ const payload={email:$('#uEmail').value.trim(),display_name:$('#uName').value.trim(),module_code:$('#uModule').value,department:$('#uDept').value,active:true};
+ if(!payload.email)return $('#userMsg').innerHTML='<span class="err">Informe o e-mail.</span>';
+ const {error}=await db.from('questionnaire_access').upsert(payload,{onConflict:'email,module_code'});
+ $('#userMsg').innerHTML=error?'<span class="err">'+esc(error.message)+'</span>':'<span class="oktxt">Usuário/setor cadastrado. Quando essa pessoa entrar, irá direto para as perguntas correspondentes.</span>';
+}
+$('#loginBtn').onclick=()=>login(false);$('#signupBtn').onclick=()=>login(true);$('#logoutBtn').onclick=async()=>{await db.auth.signOut();await boot()};$('#refreshBtn').onclick=render;$('#addUserBtn').onclick=addUser;$('#uModule').onchange=updateDeptOptions;
 document.querySelectorAll('.tabs button').forEach(b=>b.onclick=async()=>{document.querySelectorAll('.tabs button').forEach(x=>x.classList.remove('active'));b.classList.add('active');currentModule=b.dataset.module;await render()});
 boot();
 </script>
