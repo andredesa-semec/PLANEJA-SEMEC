@@ -40,7 +40,10 @@ button{border:0;border-radius:9px;padding:10px 14px;cursor:pointer;background:va
 <div class="tabs hidden" id="adminNav"><button data-view="questions" class="active">Questionários</button><button data-view="users">Usuários e setores</button></div>
 <div id="adminPanel" class="hidden"></div>
 <div id="questionPanel">
-  <div class="tabs" id="moduleTabs"><button data-module="educacao" class="active">Educação</button><button data-module="nutricao">Segurança Alimentar e Nutricional</button></div>
+  <div class="topbar" style="margin-bottom:10px">
+    <div class="tabs" id="moduleTabs" style="margin-bottom:0"><button data-module="educacao" class="active">Educação</button><button data-module="nutricao">Segurança Alimentar e Nutricional</button></div>
+    <button class="secondary" id="printReportBtn">Imprimir relatório</button>
+  </div>
   <div id="content"></div>
 </div>
 </section>
@@ -229,6 +232,41 @@ async function saveQ(btn,status){
  if(error)return alert(error.message);await render();
 }
 
+
+function printableValue(field, value){
+ if(Array.isArray(value)) return value.length ? value.join(', ') : '—';
+ if(value===null || value===undefined || String(value).trim()==='') return '—';
+ return String(value);
+}
+async function printReport(){
+ const w=window.open('','_blank');
+ if(!w){alert('O navegador bloqueou a janela de impressão. Libere pop-ups para este site e tente novamente.');return}
+ w.document.write('<p style="font-family:Arial;padding:30px">Preparando relatório...</p>');
+ try{
+  const {rows,answers}=await getRows();
+  const moduleName=currentModule==='educacao'?'Educação':'Segurança Alimentar e Nutricional';
+  const generated=new Date().toLocaleString('pt-BR');
+  const respondent=isAdmin?'Administrador - visão completa':(session?.user?.email||'');
+  const done=answers.filter(a=>a.status==='Respondido').length;
+  const questionHtml=rows.map(row=>{
+    const def=Q[currentModule][row.question_ref]||{ref:row.question_ref,text:'Pergunta '+row.question_ref,fields:F.text()};
+    const ans=answers.find(a=>a.question_id===row.id);
+    const value=ans?.answer||{};
+    const fields=(def.fields||[]).map(field=>{
+      const v=printableValue(field,value[field.key]);
+      return '<div class="resp"><strong>'+esc(field.label)+':</strong> '+esc(v)+'</div>';
+    }).join('');
+    const notes=ans?.notes?'<div class="notes"><strong>Observação/Fonte:</strong> '+esc(ans.notes)+'</div>':'';
+    return '<section class="question"><div class="qtitle">Questão '+esc(row.question_ref)+'</div><div class="sector">'+esc(row.responsible_area)+'</div><div class="qbody">'+esc(def.text)+'</div>'+fields+notes+'<div class="status">Status: '+esc(ans?.status||'Pendente')+'</div></section>';
+  }).join('');
+  const html='<!doctype html><html lang="pt-BR"><head><meta charset="utf-8"><title>Relatório - '+esc(moduleName)+'</title><style>'+
+  '@page{size:A4;margin:14mm}*{box-sizing:border-box}body{font-family:Arial,sans-serif;color:#172033;font-size:11pt;margin:0}.head{border-bottom:3px solid #164b7a;padding-bottom:10px;margin-bottom:16px}.head h1{font-size:18pt;margin:0 0 4px;color:#164b7a}.meta{font-size:9.5pt;color:#526273;line-height:1.5}.summary{padding:10px 12px;background:#f3f6f9;border:1px solid #d7e0e8;border-radius:6px;margin:12px 0 18px}.question{break-inside:avoid;border:1px solid #d6dee7;border-radius:7px;padding:12px;margin:0 0 12px}.qtitle{font-weight:700;font-size:12pt;color:#164b7a}.sector{font-size:9pt;color:#66758a;margin:2px 0 8px}.qbody{font-weight:600;line-height:1.4;margin-bottom:10px}.resp{line-height:1.45;margin:4px 0;padding-left:8px;border-left:2px solid #dbe5ee}.notes{margin-top:8px;padding:7px;background:#faf7eb;border:1px solid #eee1aa}.status{margin-top:8px;font-size:9pt;color:#66758a}.footer{margin-top:18px;border-top:1px solid #ccd6e0;padding-top:8px;font-size:8.5pt;color:#66758a}.toolbar{position:sticky;top:0;background:#fff;padding:10px 0 14px;margin-bottom:12px;border-bottom:1px solid #ddd}.toolbar button{background:#164b7a;color:white;border:0;border-radius:6px;padding:9px 14px;font-weight:700;cursor:pointer}@media print{.toolbar{display:none}.question{page-break-inside:avoid}}'+
+  '</style></head><body><div class="toolbar"><button onclick="window.print()">Imprimir / Salvar em PDF</button></div><div class="head"><h1>Questionário MUNIC 2026 - '+esc(moduleName)+'</h1><div class="meta">Município: Xinguara/PA<br>Gerado em: '+esc(generated)+'<br>Acesso: '+esc(respondent)+'</div></div><div class="summary"><strong>Resumo:</strong> '+done+' de '+rows.length+' perguntas respondidas.</div>'+questionHtml+'<div class="footer">Relatório gerado pelo Sistema de Questionários MUNIC 2026 - Xinguara/PA.</div></body></html>';
+  w.document.open();w.document.write(html);w.document.close();w.focus();
+ }catch(e){
+  w.document.open();w.document.write('<p style="font-family:Arial;padding:30px;color:#a62b2b">Erro ao gerar relatório: '+esc(e.message||e)+'</p>');w.document.close();
+ }
+}
 async function renderAdminPanel(){
  $('#adminPanel').innerHTML='<div class="card">Carregando usuários e progresso...</div>';
  const [a,m,ans]=await Promise.all([
@@ -268,7 +306,7 @@ async function addUser(){
  $('#userMsg').innerHTML='<span class="oktxt">Usuário/setor cadastrado. Quando essa pessoa entrar, irá direto para as perguntas correspondentes.</span>';
  setTimeout(()=>renderAdminPanel(),600);
 }
-$('#loginBtn').onclick=()=>login(false);$('#signupBtn').onclick=()=>login(true);$('#logoutBtn').onclick=async()=>{await db.auth.signOut();await boot()};$('#refreshBtn').onclick=render;
+$('#loginBtn').onclick=()=>login(false);$('#signupBtn').onclick=()=>login(true);$('#logoutBtn').onclick=async()=>{await db.auth.signOut();await boot()};$('#refreshBtn').onclick=render;$('#printReportBtn').onclick=printReport;
 document.querySelectorAll('#moduleTabs button').forEach(b=>b.onclick=async()=>{document.querySelectorAll('#moduleTabs button').forEach(x=>x.classList.remove('active'));b.classList.add('active');currentModule=b.dataset.module;await render()});
 document.querySelectorAll('#adminNav button').forEach(b=>b.onclick=async()=>{document.querySelectorAll('#adminNav button').forEach(x=>x.classList.remove('active'));b.classList.add('active');currentView=b.dataset.view;await render()});
 boot();
