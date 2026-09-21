@@ -243,11 +243,22 @@ async function renderAdminPanel(){
  $('#adminPanel').innerHTML=
  '<div class="card"><h3 style="margin-top:0">Cadastrar usuário e setor</h3><p class="muted">O cadastro abaixo define o que cada pessoa verá. Não é necessário distribuir pergunta por pergunta.</p>'+
  '<div class="user-form"><div><label>E-mail</label><input id="uEmail" placeholder="email@xinguara.pa.gov.br"></div><div><label>Nome</label><input id="uName" placeholder="Nome do responsável"></div><div><label>Módulo</label><select id="uModule"><option value="educacao">Educação</option><option value="nutricao">Segurança Alimentar</option></select></div><div><label>Setor</label><select id="uDept"></select></div><button id="addUserBtn">Cadastrar</button></div><div id="userMsg" class="statusline"></div></div>'+
+ '<div class="card"><h3 style="margin-top:0">Redefinir senha de acesso</h3><p class="muted">Use quando o usuário já existe, mas não consegue entrar ou não recebe e-mail de recuperação. A nova senha passa a valer imediatamente.</p><div class="row"><div><label>E-mail do usuário</label><input id="resetEmail" placeholder="email@xinguara.pa.gov.br"></div><div><label>Nova senha temporária</label><input id="resetPassword" type="password" placeholder="Mínimo 8 caracteres"></div><div style="align-self:end;flex:0 0 auto"><button id="resetPasswordBtn">Definir nova senha</button></div></div><div id="resetMsg" class="statusline"></div></div>'+
  '<div class="card"><h3 style="margin-top:0">Progresso por setor</h3><div class="admin-grid">'+sectors.map(s=>'<div class="metric"><span class="muted">'+esc(s.module==='educacao'?'Educação':'Segurança Alimentar')+'</span><strong style="font-size:15px;margin:5px 0">'+esc(s.dept)+'</strong><div class="progress"><span style="width:'+s.pct+'%"></span></div><div class="muted" style="margin-top:6px">'+s.done+' de '+s.total+' - '+s.pct+'%</div></div>').join('')+'</div></div>'+
  '<div class="card"><h3 style="margin-top:0">Acessos cadastrados</h3>'+(access.length?'<div style="overflow:auto"><table style="width:100%;border-collapse:collapse"><thead><tr><th style="text-align:left;padding:8px;border-bottom:1px solid #d9e2ec">Nome</th><th style="text-align:left;padding:8px;border-bottom:1px solid #d9e2ec">E-mail</th><th style="text-align:left;padding:8px;border-bottom:1px solid #d9e2ec">Módulo</th><th style="text-align:left;padding:8px;border-bottom:1px solid #d9e2ec">Setor</th><th></th></tr></thead><tbody>'+access.map(x=>'<tr><td style="padding:8px;border-bottom:1px solid #eef2f6">'+esc(x.display_name||'')+'</td><td style="padding:8px;border-bottom:1px solid #eef2f6">'+esc(x.email)+'</td><td style="padding:8px;border-bottom:1px solid #eef2f6">'+esc(x.module_code==='educacao'?'Educação':'Segurança Alimentar')+'</td><td style="padding:8px;border-bottom:1px solid #eef2f6">'+esc(x.department)+'</td><td style="padding:8px;border-bottom:1px solid #eef2f6"><button class="secondary small removeAccess" data-email="'+esc(x.email)+'" data-module="'+esc(x.module_code)+'">Remover</button></td></tr>').join('')+'</tbody></table></div>':'<p class="muted">Nenhum acesso cadastrado.</p>')+'</div>';
  updateDeptOptions();
- $('#uModule').onchange=updateDeptOptions;$('#addUserBtn').onclick=addUser;
+ $('#uModule').onchange=updateDeptOptions;$('#addUserBtn').onclick=addUser;$('#resetPasswordBtn').onclick=adminResetPassword;
  document.querySelectorAll('.removeAccess').forEach(b=>b.onclick=async()=>{if(!confirm('Remover este acesso ao questionário?'))return;const {error}=await db.from('questionnaire_access').delete().eq('email',b.dataset.email).eq('module_code',b.dataset.module);if(error)return alert(error.message);await renderAdminPanel()});
+}
+async function adminResetPassword(){
+ const email=$('#resetEmail').value.trim(),password=$('#resetPassword').value;
+ if(!email||password.length<8){$('#resetMsg').innerHTML='<span class="err">Informe o e-mail e uma senha com pelo menos 8 caracteres.</span>';return}
+ $('#resetMsg').textContent='Atualizando senha...';
+ const {data,error}=await db.functions.invoke('questionnaire-admin-reset-password',{body:{email,password}});
+ if(error){$('#resetMsg').innerHTML='<span class="err">'+esc(error.message||error)+'</span>';return}
+ if(data?.error){$('#resetMsg').innerHTML='<span class="err">'+esc(data.error)+'</span>';return}
+ $('#resetMsg').innerHTML='<span class="oktxt">Senha redefinida. O usuário já pode entrar com a nova senha.</span>';
+ $('#resetPassword').value='';
 }
 async function addUser(){
  const payload={email:$('#uEmail').value.trim(),display_name:$('#uName').value.trim(),module_code:$('#uModule').value,department:$('#uDept').value,active:true};
